@@ -1,74 +1,120 @@
-import { Container } from "@/components/layout/container";
+"use client";
 
-export function Hero() {
+import { useState } from "react";
+import { Phone, Clock, MapPin } from "lucide-react";
+import RequestModal from "@/components/modals/RequestModal";
+
+export default function Hero() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-      {/* BACKGROUND */}
-      <div className="absolute inset-0">
-        <img
-          src="/Rion.png"
-          alt="RION showroom"
-          className="h-full w-full object-cover"
-        />
-        {/* overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/90 via-[#07111f]/70 to-[#07111f]/40" />
-      </div>
-
-      {/* CONTENT */}
-      <Container>
-        <div className="relative z-10 flex h-screen items-center">
-          {/* LEFT SIDE */}
-          <div className="max-w-[650px]">
-            <h1 className="text-[56px] font-bold leading-[1.05]">
-              Плитка, сантехника, люстры и ковры
-            </h1>
-
-            <p className="mt-6 text-[18px] text-[#B8C2CE]">
-              Более 5000 товаров в наличии. Подберём и доставим по региону.
-            </p>
-
-            {/* CTA */}
-            <div className="mt-10 flex gap-4">
-              <button className="rounded-xl bg-[#D6A85F] px-6 py-4 font-medium text-black transition hover:opacity-90">
-                Узнать наличие
-              </button>
-
-              <button className="rounded-xl border border-white/20 px-6 py-4 text-white transition hover:bg-white/10">
-                Перейти в каталог
-              </button>
-            </div>
+    <section className="hero-bg relative min-h-[90vh] flex items-center text-white">
+      <div className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+        {/* Левая часть - текст */}
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-sm">
+            Более 5000 товаров в наличии
           </div>
 
-          {/* RIGHT SIDE - LEAD CARD */}
-          <div className="ml-auto hidden w-[420px] rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl lg:block">
-            <h3 className="text-xl font-semibold">Не можете приехать?</h3>
+          <h1 className="text-5xl md:text-6xl font-bold leading-tight tracking-tight">
+            Плитка, сантехника,
+            <br />
+            люстры и ковры
+            <br />
+            <span className="text-[#d4af37]">для вашего дома</span>
+          </h1>
 
-            <p className="mt-3 text-sm text-[#B8C2CE]">
-              Оставьте заявку — мы подберём материалы и отправим варианты.
+          <p className="text-xl text-gray-200 max-w-lg">
+            Более 5000 товаров в наличии. Подберём и доставим по региону.
+          </p>
+
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-[#d4af37] hover:bg-[#c19a2f] text-black px-8 py-4 rounded-xl font-semibold text-lg transition-all active:scale-95"
+            >
+              Узнать наличие
+            </button>
+
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="border border-white/70 hover:bg-white/10 px-8 py-4 rounded-xl font-medium text-lg transition-all"
+            >
+              Перейти в каталог
+            </button>
+          </div>
+
+          {/* Дополнительная информация */}
+          <div className="flex items-center gap-8 text-sm pt-6 border-t border-white/20">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-[#d4af37]" />
+              <div>г. Махачкала</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#d4af37]" />
+              <div>Ежедневно 9:00 — 20:00</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Правая часть - форма */}
+        <div className="hidden md:block">
+          <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <h3 className="text-2xl font-semibold mb-6">Не можете приехать?</h3>
+            <p className="text-gray-400 mb-8">
+              Подберём товары онлайн, проконсультируем и организуем доставку.
             </p>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <input
-                placeholder="Ваше имя"
-                className="rounded-lg bg-black/30 p-3 outline-none"
-              />
-
-              <input
-                placeholder="Телефон"
-                className="rounded-lg bg-black/30 p-3 outline-none"
-              />
-
-              <button className="mt-2 rounded-xl bg-[#D6A85F] py-3 font-medium text-black">
+            <form
+              className="space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsModalOpen(true);
+              }}
+            >
+              <div>
+                <input
+                  type="text"
+                  placeholder="Ваше имя"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-5 py-4 text-white placeholder:text-gray-400 focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+              <div>
+                <input
+                  type="tel"
+                  placeholder="Телефон"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-5 py-4 text-white placeholder:text-gray-400 focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-[#d4af37] hover:bg-[#c19a2f] text-black py-4 rounded-xl font-semibold text-lg transition-all"
+              >
                 Получить консультацию
               </button>
-            </div>
+            </form>
 
-            <p className="mt-4 text-xs text-[#B8C2CE]">
-              Ответим в течение 10–15 минут
+            <p className="text-center text-xs text-gray-500 mt-6">
+              Менеджер свяжется с вами в течение 15 минут
             </p>
           </div>
         </div>
-      </Container>
+      </div>
+
+      {/* Мобильная версия формы (показывается только на мобильных) */}
+      <div className="md:hidden absolute bottom-8 left-6 right-6">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full bg-[#d4af37] text-black py-4 rounded-2xl font-semibold"
+        >
+          Получить консультацию
+        </button>
+      </div>
+
+      <RequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }

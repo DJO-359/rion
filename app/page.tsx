@@ -1,6 +1,8 @@
-import { Header } from "@/components/layout/header";
+import Header from "@/components/layout/header";
+import Benefits from "@/sections/home/Benefits";
 import { Categories } from "@/sections/home/categories";
-import { Hero } from "@/sections/home/hero";
+import Hero from "@/sections/home/hero";
+
 import Products from "@/sections/home/products";
 
 export default function HomePage() {
@@ -8,8 +10,9 @@ export default function HomePage() {
     <main>
       <Header />
       <Hero />
-      <Categories />
-      <Products />
+      <Benefits />
+      {/* <Categories />
+      <Products /> */}
     </main>
   );
 }
