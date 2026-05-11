@@ -1,20 +1,48 @@
 import { Container } from "@/components/layout/container";
+import Link from "next/link";
 
 const categories = [
   {
     title: "Плитка",
+    slug: "plitka",
     desc: "Керамическая и керамогранит",
     img: "/prod1.jpg",
   },
-  { title: "Ламинат", desc: "полы и покрытия", img: "/prod2.jpg" },
 
-  { title: "Сантехника", desc: "Унитазы, раковины, ванны", img: "/prod3.jpg" },
+  {
+    title: "Ламинат",
+    slug: "laminat",
+    desc: "Полы и покрытия",
+    img: "/prod2.jpg",
+  },
 
-  { title: "Смесители", desc: "Надежность и стиль", img: "/prod4.jpg" },
+  {
+    title: "Сантехника",
+    slug: "santehnika",
+    desc: "Унитазы, раковины, ванны",
+    img: "/prod3.jpg",
+  },
 
-  { title: "Люстры", desc: "Современные и классические", img: "/prod5.png" },
+  {
+    title: "Смесители",
+    slug: "smesiteli",
+    desc: "Надежность и стиль",
+    img: "/prod4.jpg",
+  },
 
-  { title: "Ковры", desc: "Для дома и офиса", img: "/prod6.png" },
+  {
+    title: "Люстры",
+    slug: "lyustry",
+    desc: "Современные и классические",
+    img: "/prod5.png",
+  },
+
+  {
+    title: "Ковры",
+    slug: "kovry",
+    desc: "Для дома и офиса",
+    img: "/prod6.png",
+  },
 ];
 
 export function Categories() {
@@ -31,7 +59,8 @@ export function Categories() {
         {/* GRID */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
           {categories.map((cat) => (
-            <div
+            <Link
+              href={`/catalog/${cat.slug}`}
               key={cat.title}
               className="group relative h-[220px] cursor-pointer overflow-hidden rounded-2xl border border-white/10"
             >
@@ -50,7 +79,7 @@ export function Categories() {
 
                 <p className="text-sm text-[#B8C2CE]">{cat.desc}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </Container>

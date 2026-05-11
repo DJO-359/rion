@@ -5,6 +5,8 @@ import { supabase } from "@/shared/lib/supabase";
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
+  // const [activeCategory, setActiveCategory] = useState("Популярное");
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,6 +14,7 @@ export default function Products() {
       const { data, error } = await supabase
         .from("products")
         .select("*")
+        .eq("active", true)
         .order("created_at", { ascending: false });
 
       if (error) {

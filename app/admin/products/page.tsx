@@ -15,19 +15,31 @@ const categories = [
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
+
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
+
   const [file, setFile] = useState<File | null>(null);
+
   const [preview, setPreview] = useState<string | null>(null);
+
   const [uploading, setUploading] = useState(false);
+
   const [isDragging, setIsDragging] = useState(false);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [active, setActive] = useState(true);
+
+  // FETCH PRODUCTS
   const fetchProducts = async () => {
     const { data } = await supabase
       .from("products")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
+
     setProducts(data || []);
   };
 
@@ -35,128 +47,169 @@ export default function AdminProducts() {
     fetchProducts();
   }, []);
 
-  // Drag & Drop
+  // DRAG OVER
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
+  // DRAG LEAVE
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
+  // DROP
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     setIsDragging(false);
 
     const droppedFile = e.dataTransfer.files[0];
+
     if (droppedFile && droppedFile.type.startsWith("image/")) {
       setFile(droppedFile);
+
       setPreview(URL.createObjectURL(droppedFile));
     } else {
       alert("Пожалуйста, выберите изображение");
     }
   };
 
+  // SELECT FILE
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
+
     if (selectedFile) {
       setFile(selectedFile);
+
       setPreview(URL.createObjectURL(selectedFile));
     }
   };
 
+  // REMOVE IMAGE
   const removeImage = () => {
-    if (preview) URL.revokeObjectURL(preview);
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
     setPreview(null);
     setFile(null);
   };
 
-  const createProduct = async () => {
-    if (!title || !price || !category || !file) {
-      alert("Заполните все поля и добавьте фото!");
-      return;
-    }
-
+  // SAVE PRODUCT
+  const saveProduct = async () => {
     setUploading(true);
-    let imageUrl = "";
 
-    try {
-      const fileExt = file.name.split(".").pop() || "jpg";
-      const safeFileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+    let imageUrl = preview || "";
 
-      const { error: uploadError } = await supabase.storage
-        .from("products")
-        .upload(safeFileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(safeFileName);
-      imageUrl = urlData.publicUrl;
-
-      const { error: insertError } = await supabase.from("products").insert({
-        title: title.trim(),
-        price: parseFloat(price),
+    // UPLOAD NEW IMAGE
+    const { error } = await supabase
+      .from("products")
+      .update({
+        title,
+        price,
         category,
         image: imageUrl,
-      });
+        active,
+      })
+      .eq("id", editingId);
 
-      if (insertError) throw insertError;
+    if (error) {
+      console.error("Ошибка обновления:", error);
 
-      alert("✅ Товар успешно добавлен!");
-
-      setTitle("");
-      setPrice("");
-      setCategory("");
-      removeImage();
-      fetchProducts();
-    } catch (error: any) {
-      console.error(error);
-      alert("Ошибка: " + (error.message || "Неизвестная ошибка"));
-    } finally {
-      setUploading(false);
+      alert("Ошибка обновления");
+    } else {
+      alert("Товар обновлён");
     }
+
+    // EDIT MODE
+    if (editingId) {
+      await supabase
+        .from("products")
+        .update({
+          title,
+          price,
+          category,
+          image: imageUrl,
+        })
+        .eq("id", editingId);
+    }
+
+    // CREATE MODE
+    else {
+      await supabase.from("products").insert([
+        {
+          title,
+          price,
+          category,
+          image: imageUrl,
+        },
+      ]);
+    }
+
+    // RESET
+    setTitle("");
+    setPrice("");
+    setCategory("");
+
+    setPreview(null);
+    setFile(null);
+
+    setEditingId(null);
+
+    setUploading(false);
+
+    fetchProducts();
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold mb-10">
+    <div className="mx-auto max-w-7xl p-8">
+      {/* TITLE */}
+      <h1 className="mb-10 text-4xl font-bold">
         Админка — Управление товарами
       </h1>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-12">
-        <h2 className="text-2xl font-semibold mb-6">Добавить новый товар</h2>
+      {/* FORM */}
+      <div className="mb-12 rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+        <h2 className="mb-6 text-2xl font-semibold">
+          {editingId ? "Редактирование товара" : "Добавить новый товар"}
+        </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Фото */}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+          {/* IMAGE */}
           <div>
-            <label className="block text-sm text-zinc-400 mb-3">
+            <label className="mb-3 block text-sm text-zinc-400">
               Изображение товара *
             </label>
+
             <div
-              className={`border-2 border-dashed rounded-3xl h-[420px] flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden
-                ${isDragging ? "border-violet-500 bg-violet-500/10" : "border-zinc-700 hover:border-zinc-600"}`}
+              className={`relative flex h-[420px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all
+              ${
+                isDragging
+                  ? "border-violet-500 bg-violet-500/10"
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => document.getElementById("file-input")?.click()}
             >
               {preview ? (
-                <div className="relative w-full h-full">
+                <div className="relative h-full w-full">
                   <img
                     src={preview}
                     alt="preview"
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+
                       removeImage();
                     }}
-                    className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 p-3 rounded-full transition-colors"
+                    className="absolute right-4 top-4 rounded-full bg-red-600 p-3 transition-colors hover:bg-red-700"
                   >
                     <X size={24} />
                   </button>
@@ -164,13 +217,16 @@ export default function AdminProducts() {
               ) : (
                 <div className="text-center">
                   <Upload size={64} className="mx-auto mb-6 text-zinc-500" />
+
                   <p className="text-xl">Перетащите фото сюда</p>
-                  <p className="text-zinc-500 mt-2">
+
+                  <p className="mt-2 text-zinc-500">
                     или нажмите для выбора файла
                   </p>
                 </div>
               )}
             </div>
+
             <input
               id="file-input"
               type="file"
@@ -180,30 +236,34 @@ export default function AdminProducts() {
             />
           </div>
 
-          {/* Поля ввода */}
+          {/* INPUTS */}
           <div className="space-y-6">
+            {/* TITLE */}
             <input
               type="text"
               placeholder="Название товара *"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
             />
 
+            {/* PRICE */}
             <input
               type="number"
               placeholder="Цена в рублях *"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
             />
 
+            {/* CATEGORY */}
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
             >
               <option value="">Выберите категорию *</option>
+
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -211,22 +271,97 @@ export default function AdminProducts() {
               ))}
             </select>
 
+            {/* BUTTON */}
             <button
-              onClick={createProduct}
-              disabled={uploading || !title || !price || !category || !file}
-              className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-zinc-700 py-5 rounded-2xl text-xl font-medium mt-4"
+              onClick={saveProduct}
+              disabled={uploading || !title || !price || !category}
+              className="mt-4 w-full rounded-2xl bg-violet-600 py-5 text-xl font-medium transition hover:bg-violet-700 disabled:bg-zinc-700"
             >
-              {uploading ? "Загрузка..." : "Добавить товар"}
+              {editingId ? "Сохранить изменения" : "Добавить товар"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Список товаров */}
-      <h2 className="text-2xl font-semibold mb-6">
+      {/* PRODUCTS */}
+      <h2 className="mb-6 text-2xl font-semibold">
         Все товары ({products.length})
       </h2>
-      {/* ... список товаров остаётся тот же ... */}
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"
+          >
+            {/* IMAGE */}
+            <div className="h-[260px] overflow-hidden">
+              <img
+                src={product.image}
+                alt={product.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            {/* CONTENT */}
+            <div className="p-5">
+              <h3 className="text-xl font-semibold">{product.title}</h3>
+
+              <p className="mt-2 text-violet-400">{product.price} ₽</p>
+
+              <p className="mt-1 text-sm text-zinc-500">{product.category}</p>
+
+              {/* ACTIONS */}
+              <div className="mt-5 flex gap-3">
+                {/* EDIT */}
+                <button
+                  onClick={() => {
+                    setEditingId(product.id);
+
+                    setTitle(product.title);
+
+                    setPrice(product.price);
+
+                    setCategory(product.category);
+
+                    setPreview(product.image);
+                  }}
+                  className="flex-1 rounded-2xl bg-zinc-800 py-3 transition hover:bg-zinc-700"
+                >
+                  Редактировать
+                </button>
+
+                {/* DELETE */}
+                <button
+                  onClick={async () => {
+                    const confirmDelete = confirm("Удалить товар?");
+
+                    if (!confirmDelete) return;
+
+                    const { error } = await supabase
+                      .from("products")
+                      .delete()
+                      .eq("id", product.id);
+
+                    if (error) {
+                      console.error("Ошибка удаления:", error);
+
+                      alert("Ошибка удаления");
+                    } else {
+                      alert("Товар удалён");
+
+                      fetchProducts();
+                    }
+                  }}
+                  className="rounded-2xl bg-red-600 px-5 transition hover:bg-red-700"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
