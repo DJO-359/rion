@@ -1,85 +1,60 @@
-"use client";
+import React from "react";
 
-import Link from "next/link";
-import { Phone, Clock } from "lucide-react";
-
-export default function Header() {
+const RionCard: React.FC = () => {
   return (
-    <header className="bg-black/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#d4af37] rounded-full flex items-center justify-center text-black font-bold text-2xl">
-            R
-          </div>
-          <div>
-            <div className="text-2xl font-semibold tracking-tight">RION</div>
-            <div className="text-xs text-gray-400 -mt-1">
-              Ваш дом, наши решения
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Плитка
-          </Link>
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Ламинат
-          </Link>
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Сантехника
-          </Link>
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Смесители
-          </Link>
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Люстры
-          </Link>
-          <Link
-            href="/catalog"
-            className="hover:text-[#d4af37] transition-colors"
-          >
-            Ковры
-          </Link>
-          <Link href="#" className="text-[#d4af37]">
-            Акции
-          </Link>
-        </nav>
-
-        {/* Contacts */}
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center gap-2 text-sm">
-            <Phone className="w-4 h-4 text-[#d4af37]" />
-            <div>
-              <div>+7 (928) 555-33-55</div>
-              <div className="text-xs text-gray-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> 9:00 — 20:00
-              </div>
-            </div>
-          </div>
-
-          <button className="bg-[#d4af37] hover:bg-[#c19a2f] text-black px-6 py-2.5 rounded-lg font-medium transition-colors">
-            Узнать наличие
-          </button>
+    <div className="max-w-md w-full bg-white rounded-2xl shadow-md overflow-hidden font-sans">
+      {/* Верхняя секция: RION + подпись */}
+      <div className="pt-5 px-5 pb-1">
+        <div className="flex justify-between items-baseline flex-wrap gap-1">
+          <span className="text-2xl md:text-3xl font-bold tracking-wide text-gray-900">
+            RION
+          </span>
+          <span className="text-xs text-gray-500 font-normal">
+            Вход дом, наш дизайн
+          </span>
         </div>
       </div>
-    </header>
+
+      {/* Навигация: категории товаров */}
+      <div className="flex flex-wrap gap-4 px-5 pt-4 pb-3 border-b border-gray-100">
+        {[
+          "Плитка",
+          "Ламинат",
+          "Сантехника",
+          "Смесители",
+          "Люстры",
+          "Ковры",
+          "Акции",
+        ].map((category) => (
+          <a
+            key={category}
+            href="#"
+            className="text-sm md:text-base font-medium text-gray-700 hover:text-amber-700 transition-colors"
+          >
+            {category}
+          </a>
+        ))}
+      </div>
+
+      {/* Контакты: телефон и часы работы */}
+      <div className="flex flex-wrap justify-between items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
+        <div className="text-lg md:text-xl font-bold text-gray-900 tracking-wide">
+          +7 (928) 555-33-55
+        </div>
+        <div className="text-xs text-gray-500">с 9:00 до 20:00</div>
+      </div>
+
+      {/* Кнопка "Узнать наличие" */}
+      <div className="p-5">
+        <button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-sm">
+          Узнать наличие
+        </button>
+      </div>
+
+      {/* Декоративная полоска внизу (опционально, как намёк на стиль магазина) */}
+      <div className="h-1 bg-gradient-to-r from-amber-200 to-amber-600 w-full"></div>
+    </div>
   );
-}
+};
+
+export default RionCard;

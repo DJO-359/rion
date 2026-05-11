@@ -1,9 +1,10 @@
 import Header from "@/components/layout/header";
 import Benefits from "@/sections/home/Benefits";
-import { Categories } from "@/sections/home/categories";
+import Categories from "@/sections/home/categories";
+
 import Hero from "@/sections/home/hero";
 
-import Products from "@/sections/home/products";
+// import Products from "@/sections/home/products";
 
 export default function HomePage() {
   return (
@@ -11,8 +12,8 @@ export default function HomePage() {
       <Header />
       <Hero />
       <Benefits />
-      {/* <Categories />
-      <Products /> */}
+      <Categories />
+      {/* //<Products />  */}
     </main>
   );
 }
