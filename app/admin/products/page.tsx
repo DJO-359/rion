@@ -19,6 +19,15 @@ export default function AdminProducts() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+
+  const [brand, setBrand] = useState("");
+
+  const [country, setCountry] = useState("");
+
+  const [size, setSize] = useState("");
+
+  const [material, setMaterial] = useState("");
 
   const [file, setFile] = useState<File | null>(null);
 
@@ -99,68 +108,122 @@ export default function AdminProducts() {
 
   // SAVE PRODUCT
   const saveProduct = async () => {
-    setUploading(true);
+    try {
+      setUploading(true);
 
-    let imageUrl = preview || "";
+      let imageUrl = preview || "";
 
-    // UPLOAD NEW IMAGE
-    const { error } = await supabase
-      .from("products")
-      .update({
-        title,
-        price,
-        category,
-        image: imageUrl,
-        active,
-      })
-      .eq("id", editingId);
+      // UPLOAD IMAGE
+      if (file) {
+        const fileExt = file.name.split(".").pop();
 
-    if (error) {
-      console.error("Ошибка обновления:", error);
+        const fileName = `${Date.now()}.${fileExt}`;
 
-      alert("Ошибка обновления");
-    } else {
-      alert("Товар обновлён");
+        const filePath = `products/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("products")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error(uploadError);
+
+          alert("Ошибка загрузки изображения");
+
+          return;
+        }
+
+        const { data } = supabase.storage
+          .from("products")
+          .getPublicUrl(filePath);
+
+        imageUrl = data.publicUrl;
+      }
+
+      // UPDATE
+      if (editingId) {
+        const { error } = await supabase
+          .from("products")
+          .update({
+            title,
+            price,
+            category,
+            image: imageUrl,
+            active,
+
+            description,
+            brand,
+            country,
+            size,
+            material,
+          })
+          .eq("id", editingId);
+
+        if (error) {
+          console.error(error);
+
+          alert("Ошибка обновления");
+
+          return;
+        }
+
+        alert("Товар обновлён");
+      }
+
+      // CREATE
+      else {
+        const { error } = await supabase.from("products").insert([
+          {
+            title,
+            price,
+            category,
+            image: imageUrl,
+            active,
+            description,
+            brand,
+            country,
+            size,
+            material,
+          },
+        ]);
+
+        if (error) {
+          console.error(error);
+
+          alert("Ошибка создания");
+
+          return;
+        }
+
+        alert("Товар добавлен");
+      }
+
+      // RESET
+      setTitle("");
+      setPrice("");
+      setCategory("");
+      setDescription("");
+
+      setBrand("");
+
+      setCountry("");
+
+      setSize("");
+
+      setMaterial("");
+
+      setPreview(null);
+
+      setFile(null);
+
+      setEditingId(null);
+
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
     }
-
-    // EDIT MODE
-    if (editingId) {
-      await supabase
-        .from("products")
-        .update({
-          title,
-          price,
-          category,
-          image: imageUrl,
-        })
-        .eq("id", editingId);
-    }
-
-    // CREATE MODE
-    else {
-      await supabase.from("products").insert([
-        {
-          title,
-          price,
-          category,
-          image: imageUrl,
-        },
-      ]);
-    }
-
-    // RESET
-    setTitle("");
-    setPrice("");
-    setCategory("");
-
-    setPreview(null);
-    setFile(null);
-
-    setEditingId(null);
-
-    setUploading(false);
-
-    fetchProducts();
   };
 
   return (
@@ -271,6 +334,45 @@ export default function AdminProducts() {
               ))}
             </select>
 
+            <input
+              type="text"
+              placeholder="Бренд"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
+            />
+
+            <input
+              type="text"
+              placeholder="Страна"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
+            />
+
+            <input
+              type="text"
+              placeholder="Размер"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
+            />
+
+            <input
+              type="text"
+              placeholder="Материал"
+              value={material}
+              onChange={(e) => setMaterial(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
+            />
+
+            <textarea
+              placeholder="Описание товара"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[140px] w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-6 py-4 text-lg"
+            />
+
             {/* BUTTON */}
             <button
               onClick={saveProduct}
@@ -325,6 +427,16 @@ export default function AdminProducts() {
                     setCategory(product.category);
 
                     setPreview(product.image);
+
+                    setDescription(product.description || "");
+
+                    setBrand(product.brand || "");
+
+                    setCountry(product.country || "");
+
+                    setSize(product.size || "");
+
+                    setMaterial(product.material || "");
                   }}
                   className="flex-1 rounded-2xl bg-zinc-800 py-3 transition hover:bg-zinc-700"
                 >

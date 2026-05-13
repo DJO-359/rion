@@ -16,6 +16,20 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const newLeads = leads.filter((lead) => lead.status === "new").length;
+
+  const processingLeads = leads.filter(
+    (lead) => lead.status === "processing",
+  ).length;
+
+  const confirmedLeads = leads.filter(
+    (lead) => lead.status === "confirmed",
+  ).length;
+
+  const canceledLeads = leads.filter(
+    (lead) => lead.status === "canceled",
+  ).length;
+
   useEffect(() => {
     fetchLeads();
   }, []);
@@ -23,7 +37,12 @@ export default function AdminPage() {
   const fetchLeads = async () => {
     const { data } = await supabase
       .from("leads")
-      .select("*")
+      .select(
+        `
+  *,
+  products (*)
+`,
+      )
       .order("created_at", { ascending: false });
 
     setLeads(data || []);
@@ -46,7 +65,31 @@ export default function AdminPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">RION CRM</h1>
+          <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
+            <div className="rounded-3xl bg-zinc-900 p-6">
+              <p className="text-zinc-400">Новые</p>
 
+              <h2 className="mt-2 text-4xl font-bold">{newLeads}</h2>
+            </div>
+
+            <div className="rounded-3xl bg-zinc-900 p-6">
+              <p className="text-zinc-400">В обработке</p>
+
+              <h2 className="mt-2 text-4xl font-bold">{processingLeads}</h2>
+            </div>
+
+            <div className="rounded-3xl bg-zinc-900 p-6">
+              <p className="text-zinc-400">Подтверждены</p>
+
+              <h2 className="mt-2 text-4xl font-bold">{confirmedLeads}</h2>
+            </div>
+
+            <div className="rounded-3xl bg-zinc-900 p-6">
+              <p className="text-zinc-400">Отменены</p>
+
+              <h2 className="mt-2 text-4xl font-bold">{canceledLeads}</h2>
+            </div>
+          </div>
           <p className="mt-2 text-[#B8C2CE]">Управление заявками</p>
         </div>
 
@@ -84,13 +127,47 @@ export default function AdminPage() {
 
             <div>
               <select
-                value={lead.status}
-                onChange={(e) => updateStatus(lead.id, e.target.value)}
-                className="rounded-lg bg-black/30 p-2 outline-none"
+                value={lead.status || "new"}
+                onChange={async (e) => {
+                  const newStatus = e.target.value;
+
+                  console.log("Меняем статус:", newStatus);
+
+                  // UI UPDATE
+                  setLeads((prev: any[]) =>
+                    prev.map((item) =>
+                      item.id === lead.id
+                        ? { ...item, status: newStatus }
+                        : item,
+                    ),
+                  );
+
+                  // DB UPDATE
+                  const { data, error } = await supabase
+                    .from("leads")
+                    .update({
+                      status: newStatus,
+                    })
+                    .eq("id", lead.id)
+                    .select();
+
+                  console.log("RESULT:", data);
+
+                  if (error) {
+                    console.error(error);
+
+                    alert("Ошибка обновления");
+                  }
+                }}
+                className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-white"
               >
-                <option value="new">new</option>
-                <option value="contacted">contacted</option>
-                <option value="closed">closed</option>
+                <option value="new">Новая</option>
+
+                <option value="processing">В обработке</option>
+
+                <option value="confirmed">Подтверждена</option>
+
+                <option value="canceled">Отменена</option>
               </select>
             </div>
 

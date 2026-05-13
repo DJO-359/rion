@@ -1,25 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/shared/lib/supabase";
 
 type Props = {
-  productTitle?: string;
+  product?: any;
   onClose: () => void;
 };
-
-export function LeadModal({ productTitle, onClose }: Props) {
+export function LeadModal({ product, onClose }: Props) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const handleSubmit = () => {
-    // позже подключим API / Supabase
-    console.log({
+  const handleSubmit = async () => {
+    console.log("submit works");
+
+    const { error } = await supabase.from("leads").insert({
       name,
       phone,
-      product: productTitle || "Общий запрос",
+
+      product: product.title,
+
+      product_id: product.id,
+
+      status: "new",
     });
 
-    alert("Заявка отправлена!");
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+      alert("Ошибка");
+      return;
+    }
+
+    alert("Заявка отправлена");
+
+    setName("");
+    setPhone("");
+
     onClose();
   };
 
@@ -28,8 +44,8 @@ export function LeadModal({ productTitle, onClose }: Props) {
       <div className="w-[420px] rounded-2xl border border-white/10 bg-[#0f1724] p-6">
         <h2 className="text-xl font-semibold">Получить консультацию</h2>
 
-        {productTitle && (
-          <p className="mt-2 text-sm text-[#B8C2CE]">Товар: {productTitle}</p>
+        {product && (
+          <p className="mt-2 text-sm text-[#B8C2CE]">Товар: {product.title}</p>
         )}
 
         <div className="mt-5 flex flex-col gap-3">
