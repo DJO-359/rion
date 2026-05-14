@@ -4,10 +4,11 @@ import { useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
 
 type Props = {
-  product?: any;
+  productTitle: string;
+  productId: string;
   onClose: () => void;
 };
-export function LeadModal({ product, onClose }: Props) {
+export function LeadModal({ productTitle, productId, onClose }: Props) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -18,9 +19,9 @@ export function LeadModal({ product, onClose }: Props) {
       name,
       phone,
 
-      product: product.title,
+      product: productTitle,
 
-      product_id: product.id,
+      product_id: productId,
 
       status: "new",
     });
@@ -44,8 +45,8 @@ export function LeadModal({ product, onClose }: Props) {
       <div className="w-[420px] rounded-2xl border border-white/10 bg-[#0f1724] p-6">
         <h2 className="text-xl font-semibold">Получить консультацию</h2>
 
-        {product && (
-          <p className="mt-2 text-sm text-[#B8C2CE]">Товар: {product.title}</p>
+        {productId && (
+          <p className="mt-2 text-sm text-[#B8C2CE]">Товар: {productTitle}</p>
         )}
 
         <div className="mt-5 flex flex-col gap-3">

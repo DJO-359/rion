@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
 
+type Product = {
+  brand: string;
+  country: string;
+  size: string;
+  material: string;
+  price: number;
+};
+
 type Lead = {
   id: string;
   name: string;
@@ -10,6 +18,7 @@ type Lead = {
   product: string;
   status: string;
   created_at: string;
+  products?: Product;
 };
 
 export default function AdminPage() {
@@ -49,11 +58,11 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from("leads").update({ status }).eq("id", id);
+  // const updateStatus = async (id: string, status: string) => {
+  //   await supabase.from("leads").update({ status }).eq("id", id);
 
-    fetchLeads();
-  };
+  //   fetchLeads();
+  // };
 
   if (loading) {
     return <div className="p-10 text-white">Загрузка...</div>;
@@ -123,7 +132,20 @@ export default function AdminPage() {
               </a>
             </div>
 
-            <div className="text-sm text-[#B8C2CE]">{lead.product}</div>
+            <div className="text-sm text-[#B8C2CE]">
+              {lead.product}
+              <div className="mt-2 text-sm text-zinc-400">
+                <p>Бренд: {lead.products?.brand}</p>
+
+                <p>Страна: {lead.products?.country}</p>
+
+                <p>Размер: {lead.products?.size}</p>
+
+                <p>Материал: {lead.products?.material}</p>
+
+                <p>Цена: {lead.products?.price} ₽</p>
+              </div>
+            </div>
 
             <div>
               <select
@@ -134,7 +156,7 @@ export default function AdminPage() {
                   console.log("Меняем статус:", newStatus);
 
                   // UI UPDATE
-                  setLeads((prev: any[]) =>
+                  setLeads((prev: Lead[]) =>
                     prev.map((item) =>
                       item.id === lead.id
                         ? { ...item, status: newStatus }
