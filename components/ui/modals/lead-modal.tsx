@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/shared/lib/supabase";
 
 type Props = {
   productTitle: string;
   productId: string;
   onClose: () => void;
 };
+
 export function LeadModal({ productTitle, productId, onClose }: Props) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -15,29 +15,41 @@ export function LeadModal({ productTitle, productId, onClose }: Props) {
   const handleSubmit = async () => {
     console.log("submit works");
 
-    const { error } = await supabase.from("leads").insert({
-      name,
-      phone,
+    try {
+      const response = await fetch("/api/leads/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          product: productTitle,
+          productId,
+        }),
+      });
 
-      product: productTitle,
+      const data = await response.json();
 
-      product_id: productId,
+      if (!response.ok) {
+        console.error("API ERROR:", data.error);
 
-      status: "new",
-    });
+        alert("Ошибка");
 
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-      alert("Ошибка");
-      return;
+        return;
+      }
+
+      alert("Заявка отправлена");
+
+      setName("");
+      setPhone("");
+
+      onClose();
+    } catch (error) {
+      console.error(error);
+
+      alert("Ошибка сервера");
     }
-
-    alert("Заявка отправлена");
-
-    setName("");
-    setPhone("");
-
-    onClose();
   };
 
   return (

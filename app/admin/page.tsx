@@ -51,12 +51,6 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // const updateStatus = async (id: string, status: string) => {
-  //   await supabase.from("leads").update({ status }).eq("id", id);
-
-  //   fetchLeads();
-  // };
-
   if (loading) {
     return <div className="p-10 text-white">Загрузка...</div>;
   }
