@@ -5,21 +5,8 @@ import Link from "next/link";
 
 import { supabase } from "@/shared/lib/supabase";
 import { LeadModal } from "@/components/ui/modals/lead-modal";
+import type { Product } from "@/shared/types/product";
 
-type Product = {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-  image: string;
-  active: boolean;
-
-  brand?: string;
-  country?: string;
-  size?: string;
-  material?: string;
-  description?: string;
-};
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);

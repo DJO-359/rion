@@ -8,13 +8,7 @@ import { supabase } from "@/shared/lib/supabase";
 
 import { LeadModal } from "@/components/ui/modals/lead-modal";
 
-type Product = {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-  image: string;
-};
+import type { Product } from "@/shared/types/product";
 
 export default function ProductDetailsPage() {
   const params = useParams();

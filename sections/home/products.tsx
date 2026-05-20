@@ -2,20 +2,7 @@
 import { LeadModal } from "@/components/ui/modals/lead-modal";
 import { useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
-type Product = {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-  image: string;
-  active: boolean;
-
-  brand?: string;
-  country?: string;
-  size?: string;
-  material?: string;
-  description?: string;
-};
+import type { Product } from "@/shared/types/product";
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);

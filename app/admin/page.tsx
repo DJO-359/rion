@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
-
-type Product = {
-  brand: string;
-  country: string;
-  size: string;
-  material: string;
-  price: number;
-};
+import type { Product } from "@/shared/types/product";
 
 type Lead = {
   id: string;
