@@ -14,6 +14,12 @@ export function LeadModal({ productTitle, productId, onClose }: Props) {
 
   const handleSubmit = async () => {
     console.log("submit works");
+    console.log({
+      name,
+      phone,
+      productTitle,
+      productId,
+    });
 
     try {
       const response = await fetch("/api/leads/create", {

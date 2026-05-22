@@ -18,6 +18,14 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const handleLogout = async () => {
+    await fetch("/api/admin-logout", {
+      method: "POST",
+    });
+
+    window.location.href = "/admin-login";
+  };
+
   const newLeads = leads.filter((lead) => lead.status === "new").length;
 
   const processingLeads = leads.filter(
@@ -34,6 +42,27 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchLeads();
+
+    const channel = supabase
+      .channel("leads-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "leads",
+        },
+        (payload) => {
+          console.log("NEW LEAD:", payload);
+
+          fetchLeads();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchLeads = async () => {
@@ -140,27 +169,12 @@ export default function AdminPage() {
                 onChange={async (e) => {
                   const newStatus = e.target.value;
 
-                  console.log("Меняем статус:", newStatus);
-
-                  // UI UPDATE
-                  setLeads((prev: Lead[]) =>
-                    prev.map((item) =>
-                      item.id === lead.id
-                        ? { ...item, status: newStatus }
-                        : item,
-                    ),
-                  );
-
-                  // DB UPDATE
-                  const { data, error } = await supabase
+                  const { error } = await supabase
                     .from("leads")
                     .update({
                       status: newStatus,
                     })
-                    .eq("id", lead.id)
-                    .select();
-
-                  console.log("RESULT:", data);
+                    .eq("id", lead.id);
 
                   if (error) {
                     console.error(error);
@@ -199,6 +213,12 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
+      <button
+        onClick={handleLogout}
+        className="rounded-xl bg-red-500 px-4 py-2 text-white"
+      >
+        Выйти
+      </button>
     </div>
   );
 }

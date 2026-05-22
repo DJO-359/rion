@@ -8,8 +8,13 @@ export default function AdminLoginPage() {
   const handleLogin = async () => {
     const res = await fetch("/api/admin-login", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ password }),
     });
+    console.log("ENV:", process.env.ADMIN_SECRET);
+    console.log("PASSWORD:", password);
 
     if (res.ok) {
       window.location.href = "/admin";

@@ -81,6 +81,7 @@ export default function ProductDetailsPage() {
       {openModal && (
         <LeadModal
           productTitle={product.title}
+          productId={product.id}
           onClose={() => setOpenModal(false)}
         />
       )}

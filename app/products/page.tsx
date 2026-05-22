@@ -87,7 +87,8 @@ export default function ProductsPage() {
       </div>
       {selectedProduct && (
         <LeadModal
-          product={selectedProduct}
+          productTitle={selectedProduct.title}
+          productId={selectedProduct.id}
           onClose={() => setSelectedProduct(null)}
         />
       )}

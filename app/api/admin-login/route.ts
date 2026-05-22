@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const { password } = await req.json();
 
-  if (body.password === process.env.ADMIN_PASSWORD) {
-    const response = NextResponse.json({
-      success: true,
-    });
-
-    response.cookies.set("admin-auth", "true", {
-      httpOnly: true,
-      path: "/",
-    });
-
-    return response;
+  if (password !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const token = crypto.randomBytes(32).toString("hex");
+
+  const res = NextResponse.json({ success: true });
+
+  res.cookies.set("admin-auth", token, {
+    httpOnly: true,
+    secure: false, // 👈 ВАЖНО для localhost
+    sameSite: "lax",
+    path: "/",
+  });
+
+  return res;
 }
