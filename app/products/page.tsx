@@ -56,6 +56,7 @@ export default function ProductsPage() {
               <p className="mt-2 text-violet-400">{product.price} ₽</p>
 
               <p className="mt-1 text-zinc-500">{product.category}</p>
+
               <div className="mt-4 space-y-1 text-sm text-zinc-400">
                 {product.brand && <p>Бренд: {product.brand}</p>}
 
@@ -85,6 +86,7 @@ export default function ProductsPage() {
           </div>
         ))}
       </div>
+
       {selectedProduct && (
         <LeadModal
           productTitle={selectedProduct.title}

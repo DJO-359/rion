@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
-  if (!isAdminPage) return NextResponse.next();
+  if (!isAdminPage) {
+    return NextResponse.next();
+  }
 
   const auth = request.cookies.get("admin-auth")?.value;
-
-  console.log("MIDDLEWARE COOKIE:", auth);
 
   if (!auth) {
     return NextResponse.redirect(new URL("/admin-login", request.url));

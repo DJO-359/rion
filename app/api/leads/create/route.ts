@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendTelegramMessage } from "@/shared/lib/telegram";
 
 const requestMap = new Map<string, number>();
 
@@ -18,28 +19,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const cookieHeader = req.headers.get("cookie");
-
-    const auth = cookieHeader
-      ?.split(";")
-      .find((c) => c.trim().startsWith("admin-auth="))
-      ?.split("=")[1];
-
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    // RATE LIMIT
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     const lastRequest = requestMap.get(ip);
+
     const now = Date.now();
 
-    if (lastRequest && now - lastRequest < 5000) {
+    if (lastRequest && now - lastRequest < 1500) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     requestMap.set(ip, now);
 
+    // PRODUCT DATA
+    const { data: productData } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .single();
+
+    // INSERT LEAD
     const { error } = await supabase.from("leads").insert({
       name,
       phone,
@@ -49,14 +49,31 @@ export async function POST(req: Request) {
     });
 
     if (error) {
+      console.error("SUPABASE ERROR:", error);
+
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // TELEGRAM
+    await sendTelegramMessage({
+      name,
+      phone,
+      product,
+      productId,
+
+      image: productData?.image,
+      brand: productData?.brand,
+      country: productData?.country,
+      size: productData?.size,
+      material: productData?.material,
+      price: productData?.price,
+    });
 
     return NextResponse.json({
       success: true,
     });
   } catch (error) {
-    console.error(error);
+    console.error("SERVER ERROR:", error);
 
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
