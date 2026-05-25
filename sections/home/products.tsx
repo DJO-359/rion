@@ -1,17 +1,21 @@
 "use client";
-
+import { LeadModal } from "@/components/ui/modals/lead-modal";
 import { useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
+import type { Product } from "@/shared/types/product";
 
 export default function Products() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  // const [activeCategory, setActiveCategory] = useState("Популярное");
 
+  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   useEffect(() => {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
+        .eq("active", true)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -49,13 +53,34 @@ export default function Products() {
                 />
               )}
               <div className="p-6">
-                <h3 className="text-xl font-semibold line-clamp-2">
+                {/* CATEGORY + BRAND */}
+                <p className="text-sm text-zinc-500">
+                  {product.category}
+                  {product.brand && ` | ${product.brand}`}
+                </p>
+
+                {/* TITLE */}
+                <h3 className="mt-2 text-xl font-semibold leading-snug">
                   {product.title}
                 </h3>
-                <p className="text-3xl font-bold text-violet-400 mt-3">
-                  {product.price} ₽
+
+                {/* SIZE */}
+                {product.size && (
+                  <p className="mt-2 text-sm text-zinc-500">{product.size}</p>
+                )}
+
+                {/* PRICE */}
+                <p className="mt-4 text-3xl font-bold text-violet-400">
+                  {product.price} ₽/м²
                 </p>
-                <p className="text-sm text-zinc-500 mt-1">{product.category}</p>
+
+                {/* BUTTON */}
+                <button
+                  onClick={() => setSelectedProduct(product)}
+                  className="mt-5 w-full rounded-2xl bg-[#D6A85F] py-3 font-medium text-black transition hover:opacity-90"
+                >
+                  Узнать наличие
+                </button>
               </div>
             </div>
           ))}
@@ -67,6 +92,13 @@ export default function Products() {
           </p>
         )}
       </div>
+      {selectedProduct && (
+        <LeadModal
+          productTitle={selectedProduct.title}
+          productId={selectedProduct.id}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </section>
   );
 }

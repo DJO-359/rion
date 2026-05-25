@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import Image from "next/image";
+=======
+import { Container } from "@/components/layout/container";
+>>>>>>> 6e860acdb2a5f0d5a9dc45988faed113954e9d9a
 import Link from "next/link";
 
 const categories = [
   {
     title: "Плитка",
+    slug: "plitka",
     desc: "Керамическая и керамогранит",
     img: "/prod1.jpg",
     link: "/catalog/tile",
@@ -38,6 +43,44 @@ const categories = [
     img: "/prod6.png",
     link: "/catalog/carpets",
   },
+<<<<<<< HEAD
+=======
+
+  {
+    title: "Ламинат",
+    slug: "laminat",
+    desc: "Полы и покрытия",
+    img: "/prod2.jpg",
+  },
+
+  {
+    title: "Сантехника",
+    slug: "santehnika",
+    desc: "Унитазы, раковины, ванны",
+    img: "/prod3.jpg",
+  },
+
+  {
+    title: "Смесители",
+    slug: "smesiteli",
+    desc: "Надежность и стиль",
+    img: "/prod4.jpg",
+  },
+
+  {
+    title: "Люстры",
+    slug: "lyustry",
+    desc: "Современные и классические",
+    img: "/prod5.png",
+  },
+
+  {
+    title: "Ковры",
+    slug: "kovry",
+    desc: "Для дома и офиса",
+    img: "/prod6.png",
+  },
+>>>>>>> 6e860acdb2a5f0d5a9dc45988faed113954e9d9a
 ];
 
 export default function Categories() {
@@ -55,12 +98,22 @@ export default function Categories() {
           </Link>
         </div>
 
+<<<<<<< HEAD
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category, index) => (
             <Link
               href={category.link}
               key={index}
               className="group relative overflow-hidden rounded-3xl aspect-[16/10] shadow-xl"
+=======
+        {/* GRID */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {categories.map((cat) => (
+            <Link
+              href={`/catalog/${cat.slug}`}
+              key={cat.title}
+              className="group relative h-[220px] cursor-pointer overflow-hidden rounded-2xl border border-white/10"
+>>>>>>> 6e860acdb2a5f0d5a9dc45988faed113954e9d9a
             >
               <Image
                 src={category.img}
@@ -78,10 +131,13 @@ export default function Categories() {
 
                 <p className="text-gray-300 text-lg">{category.desc}</p>
               </div>
+<<<<<<< HEAD
 
               <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md px-5 py-2 rounded-full text-sm border border-white/20 opacity-0 group-hover:opacity-100 transition-all">
                 Смотреть
               </div>
+=======
+>>>>>>> 6e860acdb2a5f0d5a9dc45988faed113954e9d9a
             </Link>
           ))}
         </div>
