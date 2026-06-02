@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
 
         <button
           onClick={handleLogin}
-          className="mt-4 w-full rounded-xl bg-[#D6A85F] py-3 font-medium text-black"
+          className="mt-4 w-full rounded-xl bg-[#C89B5E] py-3 font-medium text-black"
         >
           Войти
         </button>

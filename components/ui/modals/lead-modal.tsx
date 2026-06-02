@@ -166,7 +166,7 @@ export function LeadModal({ productTitle, productId, onClose }: Props) {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="mt-2 rounded-xl bg-[#D6A85F] py-3 font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="mt-2 rounded-xl bg-[#C89B5E] py-3 font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {isLoading ? "Отправка..." : "Отправить заявку"}
           </button>

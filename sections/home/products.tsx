@@ -3,10 +3,10 @@ import { LeadModal } from "@/components/ui/modals/lead-modal";
 import { useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
 import type { Product } from "@/shared/types/product";
+import { ShoppingBag, Truck, MapPin, Shield, Headset } from "lucide-react";
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
-  // const [activeCategory, setActiveCategory] = useState("Популярное");
 
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -37,7 +37,161 @@ export default function Products() {
   return (
     <section className="py-20 bg-zinc-950">
       <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-4xl font-bold text-center mb-12">Наши товары</h2>
+        <div className="relative z-10 mt-16 hidden xl:block">
+          <div
+            className="
+              relative
+              overflow-hidden
+              rounded-[36px]
+              border
+              border-[#f6c15c]
+              bg-[linear-gradient(180deg,#d5963a_0%,#9d6320_45%,#5d3814_100%)]
+              shadow-[0_0_0_2px_rgba(255,215,120,0.45),0_25px_60px_rgba(201,139,52,0.5)]
+            "
+          >
+            {/* INNER BORDER */}
+            <div className="absolute inset-[3px] rounded-[32px] border border-[#ffd27b]/50" />
+
+            <div className="relative grid grid-cols-5">
+              {[
+                {
+                  icon: ShoppingBag,
+                  title: "5000+",
+                  text: "товаров в наличии",
+                  large: true,
+                },
+                {
+                  icon: Truck,
+                  title: "10+",
+                  text: "Ежедневные поставки",
+                },
+                {
+                  icon: MapPin,
+                  title: "Работаем",
+                  text: "по всему Северному Кавказу",
+                },
+                {
+                  icon: Shield,
+                  title: "Гарантия качества",
+                  text: "на всю продукцию",
+                },
+                {
+                  icon: Headset,
+                  title: "Поддержка",
+                  text: "Поможем с выбором",
+                },
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  className="
+                    relative
+                    flex
+                    flex-col
+                    items-center
+                    justify-center
+                    px-6
+                    py-8
+                    text-center
+                  "
+                >
+                  {/* glowing divider */}
+                  {index !== 0 && (
+                    <>
+                      <div
+                        className="
+                          absolute
+                          left-0
+                          top-1/2
+                          h-[72%]
+                          w-px
+                          -translate-y-1/2
+                          bg-[#ffd06a]
+                          opacity-70
+                        "
+                      />
+
+                      <div
+                        className="
+                          absolute
+                          left-0
+                          top-1/2
+                          h-[72%]
+                          w-[3px]
+                          -translate-y-1/2
+                          bg-[#ffd06a]/30
+                          blur-sm
+                        "
+                      />
+                    </>
+                  )}
+
+                  <div
+                    className="
+                      mb-4
+                      rounded-full
+                      text-[#ffd06a]
+                      drop-shadow-[0_0_12px_rgba(255,208,106,0.95)]
+                    "
+                  >
+                    <item.icon size={58} strokeWidth={1.8} />
+                  </div>
+
+                  {item.large ? (
+                    <>
+                      <div
+                        className="
+                          text-[34px]
+                          font-bold
+                          leading-none
+                          text-white
+                          drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]
+                        "
+                      >
+                        {item.title}
+                      </div>
+
+                      <div
+                        className="
+                          mt-4
+                          text-[17px]
+                          font-medium
+                          text-white
+                        "
+                      >
+                        {item.text}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="
+                          text-[28px]
+                          font-bold
+                          text-white
+                          drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]
+                        "
+                      >
+                        {item.title}
+                      </div>
+
+                      <div
+                        className="
+                          mt-3
+                          text-[17px]
+                          leading-relaxed
+                          text-white
+                          max-w-[220px]
+                        "
+                      >
+                        {item.text}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
@@ -77,7 +231,7 @@ export default function Products() {
                 {/* BUTTON */}
                 <button
                   onClick={() => setSelectedProduct(product)}
-                  className="mt-5 w-full rounded-2xl bg-[#D6A85F] py-3 font-medium text-black transition hover:opacity-90"
+                  className="mt-5 w-full rounded-2xl bg-[#C89B5E] py-3 font-medium text-black transition hover:opacity-90"
                 >
                   Узнать наличие
                 </button>
@@ -85,7 +239,6 @@ export default function Products() {
             </div>
           ))}
         </div>
-
         {products.length === 0 && (
           <p className="text-center text-zinc-500 text-2xl py-12">
             Пока нет добавленных товаров

@@ -36,3 +36,111 @@ a {
 button {
   cursor: pointer;
 }
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #081120;
+  color: white;
+}
+
+button,
+a {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.premium-btn {
+  position: relative;
+  overflow: hidden;
+
+  margin-top: 1rem;
+
+  padding: 10px 15px;
+
+  border-radius: 18px;
+  border: none;
+
+  cursor: pointer;
+
+  font-size: 16px;
+  font-weight: 600;
+  color: black;
+
+  background: linear-gradient(
+    135deg,
+    #c89b5e 0%,
+    #d2a567 35%,
+    #e0ba84 50%,
+    #d2a567 65%,
+    #c89b5e 100%
+  );
+
+  background-size: 200% 100%;
+
+  box-shadow: 0 4px 20px rgba(200, 155, 94, 0.25);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+
+  animation: gradientMove 8s ease-in-out infinite;
+}
+
+.premium-btn:hover {
+  transform: scale(1.02);
+
+  box-shadow: 0 6px 30px rgba(200, 155, 94, 0.35);
+}
+
+.premium-btn-text {
+  position: relative;
+  z-index: 2;
+}
+
+.premium-btn-shimmer {
+  position: absolute;
+  inset: 0;
+
+  z-index: 1;
+
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 70%
+  );
+
+  transform: translateX(-200%);
+
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
+  }
+}

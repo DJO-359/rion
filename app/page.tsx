@@ -5,7 +5,7 @@ import Products from "@/sections/home/products";
 
 export default function HomePage() {
   return (
-    <main>
+    <main className="pl-[86px]">
       <Header />
       <Hero />
       <Categories />

@@ -1,91 +1,76 @@
+import { Phone, MessageCircle, Menu } from "lucide-react";
+import { Container } from "./container";
+
 export function Header() {
   return (
-    <header className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-[#07111F]/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-[86px] max-w-[1440px] items-center justify-between px-4 md:px-8">
-        {/* LEFT */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#D6A85F] bg-white">
-            <span className="text-2xl font-bold text-black">R</span>
+    <Container>
+      <header className="fixed top-0 left-0 z-50 w-full border-b border-white/10 bg-[#212c3b] backdrop-blur-2xl">
+        <div className="mx-auto flex h-[72px] max-w-[auto] items-center justify-around px-10 xl:px-16">
+          {/* LEFT */}
+          <div className="flex items-center gap-10">
+            <div className="flex flex-col">
+              <img
+                src="/not_logo.jpg"
+                alt="RION"
+                className="h-12 w-auto object-contain"
+              />
+
+              <span className="mt-1 text-xs tracking-wide text-white/50">
+                Ваш дом, наш дизайн
+              </span>
+            </div>
+
+            {/* MOBILE CATALOG */}
+            <button className="flex items-center gap-3 rounded-2xl border border-[#C89B5E]/40 bg-white/[0.03] px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:border-[#D6A85F] hover:bg-white/[0.06] lg:hidden">
+              Каталог товаров
+              <Menu size={18} className="text-[#D6A85F]" />
+            </button>
           </div>
 
-          <div className="leading-none">
-            <div className="text-[34px] font-semibold tracking-wide text-white">
-              RION
+          {/* NAV */}
+          <nav className="hidden items-center gap-10 xl:flex">
+            {[
+              "Плитка",
+              "Ламинат",
+              "Сантехника",
+              "Смесители",
+              "Люстры",
+              "Ковры",
+            ].map((item) => (
+              <a
+                key={item}
+                href="#"
+                className="text-[15px] font-medium text-white/90 transition duration-300 hover:text-[#D6A85F]"
+              >
+                {item}
+              </a>
+            ))}
+
+            <a href="#" className="text-[15px] font-semibold text-[#D6A85F]">
+              Акции
+            </a>
+          </nav>
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-5">
+            <button className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white transition hover:border-[#C89B5E]/50 hover:bg-white/[0.06]">
+              <Phone size={18} />
+            </button>
+
+            <div className="hidden text-right lg:block">
+              <div className="text-[22px] font-semibold tracking-tight text-white">
+                +7 (963) 704-81-77
+              </div>
+
+              <div className="mt-1 text-sm text-white/50">c 9:00 до 20:00</div>
             </div>
 
-            <div className="mt-1 text-xs text-white/70">
-              Ваш дом, наш дизайн
-            </div>
+            <button className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#C89B5E]/30 bg-[#C89B5E]/10 text-[#D6A85F] transition hover:bg-[#C89B5E]/20">
+              <MessageCircle size={18} />
+            </button>
           </div>
         </div>
-
-        {/* CENTER */}
-        <nav className="hidden items-center gap-10 lg:flex">
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Плитка
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Ламинат
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Сантехника
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Смесители
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Люстры
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-white transition hover:text-[#D6A85F]"
-          >
-            Ковры
-          </a>
-
-          <a
-            href="#"
-            className="text-[15px] font-medium text-[#D6A85F] transition"
-          >
-            Акции
-          </a>
-        </nav>
-
-        {/* RIGHT */}
-        <div className="flex items-center gap-6">
-          <div className="hidden text-right lg:block">
-            <div className="text-lg font-semibold text-white">
-              +7 (928) 555-33-55
-            </div>
-
-            <div className="mt-1 text-sm text-white/70">c 9:00 до 20:00</div>
-          </div>
-
-          <button className="rounded-xl bg-[#D6A85F] px-18 py-12 text-sm font-semibold text-black transition hover:bg-[#e4b66c]">
-            Узнать наличие
-          </button>
-        </div>
-      </div>
-    </header>
+      </header>
+    </Container>
   );
 }
