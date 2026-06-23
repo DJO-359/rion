@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/shared/lib/supabase";
-import type { Product } from "@/shared/types/product";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import pb from "@/shared/lib/pocketbase";
+import { adminLogout, useAdminAuth } from "@/shared/hooks/use-admin-auth";
+import type { Order } from "@/shared/types/product";
 import {
   LineChart,
   Line,
@@ -14,101 +15,72 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-type Lead = {
-  id: string;
-  name: string;
-  phone: string;
-  product: string;
-  status: string;
-  notes?: string;
-  created_at: string;
-  products?: Product;
-};
-
 const LIMIT = 20;
 
 export default function AdminPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const { authorized, loading: authLoading } = useAdminAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const pageRef = useRef(0);
   const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const handleLogout = async () => {
-    await fetch("/api/admin-logout", { method: "POST" });
-    window.location.href = "/admin-login";
-  };
-
-  const fetchLeads = async (reset = false) => {
+  const fetchOrders = useCallback(async (reset = false) => {
     try {
-      const currentPage = reset ? 0 : page;
-      const from = currentPage * LIMIT;
-      const to = from + LIMIT - 1;
+      const nextPage = reset ? 1 : pageRef.current + 1;
 
-      const { data, error } = await supabase
-        .from("leads")
-        .select(`*, products (*)`)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        console.error(error);
-        return;
-      }
+      const result = await pb.collection("orders").getList<Order>(nextPage, LIMIT, {
+        sort: "-created",
+        expand: "product",
+      });
 
       if (reset) {
-        setLeads(data || []);
-        setPage(1);
+        setOrders(result.items);
+        pageRef.current = 1;
       } else {
-        setLeads((prev) => [...prev, ...(data || [])]);
-        setPage((prev) => prev + 1);
+        setOrders((prev) => [...prev, ...result.items]);
+        pageRef.current = nextPage;
       }
 
-      if (!data || data.length < LIMIT) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-
+      setHasMore(result.items.length === LIMIT);
       setLoading(false);
     } catch (error) {
       console.error(error);
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchLeads(true);
-
-    const channel = supabase
-      .channel("leads-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "leads" },
-        () => fetchLeads(true),
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
+  useEffect(() => {
+    if (!authorized) return;
+
+    fetchOrders(true);
+
+    pb.collection("orders").subscribe("*", () => {
+      fetchOrders(true);
+    });
+
+    return () => {
+      pb.collection("orders").unsubscribe("*");
+    };
+  }, [authorized, fetchOrders]);
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
       const query = search.toLowerCase();
+      const productTitle = order.expand?.product?.title?.toLowerCase() || "";
       const matchesSearch =
-        lead.name.toLowerCase().includes(query) ||
-        lead.phone.toLowerCase().includes(query) ||
-        lead.product.toLowerCase().includes(query);
-      const matchesFilter = filter === "all" ? true : lead.status === filter;
+        order.name.toLowerCase().includes(query) ||
+        order.phone.toLowerCase().includes(query) ||
+        productTitle.includes(query);
+      const matchesFilter = filter === "all" ? true : order.status === filter;
       return matchesSearch && matchesFilter;
     });
-  }, [leads, search, filter]);
+  }, [orders, search, filter]);
 
-  const groupedLeads = useMemo(() => {
-    return filteredLeads.reduce((acc: Record<string, Lead[]>, lead) => {
-      const date = new Date(lead.created_at);
+  const groupedOrders = useMemo(() => {
+    return filteredOrders.reduce((acc: Record<string, Order[]>, order) => {
+      const date = new Date(order.created);
       const today = new Date();
       const yesterday = new Date();
       yesterday.setDate(today.getDate() - 1);
@@ -120,62 +92,61 @@ export default function AdminPage() {
       else label = date.toLocaleDateString("ru-RU");
 
       if (!acc[label]) acc[label] = [];
-      acc[label].push(lead);
+      acc[label].push(order);
       return acc;
     }, {});
-  }, [filteredLeads]);
+  }, [filteredOrders]);
 
   const stats = {
-    new: leads.filter((l) => l.status === "new").length,
-    processing: leads.filter((l) => l.status === "processing").length,
-    confirmed: leads.filter((l) => l.status === "confirmed").length,
-    canceled: leads.filter((l) => l.status === "canceled").length,
+    new: orders.filter((o) => o.status === "new").length,
+    processing: orders.filter((o) => o.status === "processing").length,
+    confirmed: orders.filter((o) => o.status === "confirmed").length,
+    canceled: orders.filter((o) => o.status === "canceled").length,
   };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayLeads = leads.filter(
-    (lead) => new Date(lead.created_at) >= today,
+  const todayOrders = orders.filter(
+    (order) => new Date(order.created) >= today,
   ).length;
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekLeads = leads.filter(
-    (lead) => new Date(lead.created_at) >= weekAgo,
+  const weekOrders = orders.filter(
+    (order) => new Date(order.created) >= weekAgo,
   ).length;
 
-  const confirmedLeads = stats.confirmed;
-  const canceledLeads = stats.canceled;
-
+  const confirmedOrders = stats.confirmed;
+  const canceledOrders = stats.canceled;
   const conversion =
-    leads.length > 0 ? Math.round((confirmedLeads / leads.length) * 100) : 0;
-
+    orders.length > 0 ? Math.round((confirmedOrders / orders.length) * 100) : 0;
   const canceledPercent =
-    leads.length > 0 ? Math.round((canceledLeads / leads.length) * 100) : 0;
+    orders.length > 0 ? Math.round((canceledOrders / orders.length) * 100) : 0;
 
-  const popularProducts = Object.values(
-    leads.reduce(
-      (acc: Record<string, { name: string; count: number }>, lead) => {
-        if (!acc[lead.product]) {
-          acc[lead.product] = { name: lead.product, count: 0 };
+  const popularProducts = useMemo(() => {
+    const counts = orders.reduce(
+      (acc, order) => {
+        const title = order.expand?.product?.title;
+        if (title) {
+          acc[title] = (acc[title] || 0) + 1;
         }
-        acc[lead.product].count++;
         return acc;
       },
-      {},
-    ),
-  ).sort((a, b) => b.count - a.count);
+      {} as Record<string, number>,
+    );
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [orders]);
 
-  // Данные для графика "за 7 дней"
-  const dailyLeads = useMemo(() => {
+  const dailyOrders = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       d.setHours(0, 0, 0, 0);
-      const dateStr = d.toDateString();
-      const count = leads.filter(
-        (lead) => new Date(lead.created_at).toDateString() === dateStr,
+      const count = orders.filter(
+        (order) => new Date(order.created).toDateString() === d.toDateString(),
       ).length;
       days.push({
         date: d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }),
@@ -183,9 +154,41 @@ export default function AdminPage() {
       });
     }
     return days;
-  }, [leads]);
+  }, [orders]);
 
-  if (loading) {
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await pb.collection("orders").update(orderId, { status: newStatus });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
+      );
+    } catch (error) {
+      console.error("Ошибка обновления статуса:", error);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm("Удалить заявку?")) return;
+    try {
+      await pb.collection("orders").delete(orderId);
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+    }
+  };
+
+  const updateNotes = async (orderId: string, notes: string) => {
+    try {
+      await pb.collection("orders").update(orderId, { notes });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, notes } : o)),
+      );
+    } catch (error) {
+      console.error("Ошибка сохранения заметки:", error);
+    }
+  };
+
+  if (!authorized || authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#07111f]">
         <div className="text-white">Загрузка...</div>
@@ -203,19 +206,16 @@ export default function AdminPage() {
 
           {/* АНАЛИТИКА с графиками */}
           <div className="mt-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
-            {/* Лидов сегодня */}
             <div className="rounded-3xl bg-[#111827] p-6">
               <p className="text-zinc-400">Лидов сегодня</p>
-              <h2 className="mt-2 text-4xl font-bold">{todayLeads}</h2>
+              <h2 className="mt-2 text-4xl font-bold">{todayOrders}</h2>
             </div>
-
-            {/* За 7 дней + мини-график */}
             <div className="rounded-3xl bg-[#111827] p-6">
               <p className="text-zinc-400">За 7 дней</p>
-              <h2 className="mt-2 text-4xl font-bold">{weekLeads}</h2>
+              <h2 className="mt-2 text-4xl font-bold">{weekOrders}</h2>
               <div className="mt-3 h-12 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyLeads}>
+                  <LineChart data={dailyOrders}>
                     <Line
                       type="monotone"
                       dataKey="count"
@@ -232,16 +232,12 @@ export default function AdminPage() {
                 </ResponsiveContainer>
               </div>
             </div>
-
-            {/* Конверсия */}
             <div className="rounded-3xl bg-[#111827] p-6">
               <p className="text-zinc-400">Конверсия</p>
               <h2 className="mt-2 text-4xl font-bold text-green-400">
                 {conversion}%
               </h2>
             </div>
-
-            {/* Отмены */}
             <div className="rounded-3xl bg-[#111827] p-6">
               <p className="text-zinc-400">Отмены</p>
               <h2 className="mt-2 text-4xl font-bold text-red-400">
@@ -250,13 +246,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ПОПУЛЯРНЫЕ ТОВАРЫ – растянутый блок */}
-          {/* ПОПУЛЯРНЫЕ ТОВАРЫ – растянутый блок */}
+          {/* ПОПУЛЯРНЫЕ ТОВАРЫ */}
           <div className="mt-8 rounded-3xl bg-zinc-900 p-8 -mx-4 md:-mx-8">
             <h2 className="text-2xl font-bold mb-4">Популярные товары</h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* левая колонка – список как на скрине */}
               <div className="space-y-3">
                 {popularProducts.slice(0, 5).map((item) => (
                   <div
@@ -273,8 +266,6 @@ export default function AdminPage() {
                   <div className="text-gray-400">Нет данных</div>
                 )}
               </div>
-
-              {/* правая колонка – вертикальные бары */}
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -307,10 +298,16 @@ export default function AdminPage() {
 
         <div className="flex items-center gap-4">
           <div className="rounded-xl bg-[#C89B5E] px-4 py-2 font-medium text-black">
-            Всего: {leads.length}
+            Всего: {orders.length}
           </div>
+          <a
+            href="/admin/products"
+            className="rounded-xl bg-zinc-700 px-4 py-2 text-white transition hover:bg-zinc-600"
+          >
+            Товары
+          </a>
           <button
-            onClick={handleLogout}
+            onClick={adminLogout}
             className="rounded-xl bg-red-500 px-4 py-2 text-white transition hover:bg-red-600"
           >
             Выйти
@@ -380,209 +377,184 @@ export default function AdminPage() {
 
       {/* КАРТОЧКИ ЗАЯВОК */}
       <div>
-        {Object.entries(groupedLeads).map(([date, items]) => (
+        {Object.entries(groupedOrders).map(([date, items]) => (
           <div key={date} className="mb-8">
             <h2 className="mb-4 text-2xl font-bold text-violet-400">{date}</h2>
             <div>
-              {items.map((lead, idx) => (
-                <div
-                  key={lead.id}
-                  className={`rounded-2xl bg-zinc-800 p-6 transition hover:bg-zinc-700/80 ${
-                    idx !== items.length - 1 ? "mb-6" : ""
-                  }`}
-                >
-                  {/* Шапка: имя и телефон */}
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20">
-                          <span className="text-violet-400">👤</span>
+              {items.map((order, idx) => {
+                const product = order.expand?.product;
+                const imageUrl = product?.images?.[0]
+                  ? pb.files.getURL(product, product.images[0])
+                  : null;
+                return (
+                  <div
+                    key={order.id}
+                    className={`rounded-2xl bg-zinc-800 p-6 transition hover:bg-zinc-700/80 ${
+                      idx !== items.length - 1 ? "mb-6" : ""
+                    }`}
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20">
+                            <span className="text-violet-400">👤</span>
+                          </div>
+                          <h3 className="text-xl font-semibold text-white">
+                            {order.name}
+                          </h3>
                         </div>
-                        <h3 className="text-xl font-semibold text-white">
-                          {lead.name}
-                        </h3>
+                        <div className="flex items-center gap-3 pl-13">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+                            <span className="text-emerald-400">📞</span>
+                          </div>
+                          <a
+                            href={`tel:${order.phone}`}
+                            className="text-lg font-medium text-[#D6A85F] hover:underline"
+                          >
+                            {order.phone}
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 pl-13">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
-                          <span className="text-emerald-400">📞</span>
-                        </div>
-                        <a
-                          href={`tel:${lead.phone}`}
-                          className="text-lg font-medium text-[#D6A85F] hover:underline"
+
+                      <div className="flex flex-wrap items-center gap-4">
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            updateStatus(order.id, e.target.value)
+                          }
+                          className={`cursor-pointer rounded-xl border px-4 py-2 text-sm font-medium ${
+                            order.status === "new"
+                              ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-400"
+                              : order.status === "processing"
+                                ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                                : order.status === "confirmed"
+                                  ? "border-green-500/50 bg-green-500/10 text-green-400"
+                                  : "border-red-500/50 bg-red-500/10 text-red-400"
+                          }`}
                         >
-                          {lead.phone}
-                        </a>
+                          <option value="new">🟡 Новый</option>
+                          <option value="processing">🔵 В обработке</option>
+                          <option value="confirmed">🟢 Подтвержден</option>
+                          <option value="canceled">🔴 Отменен</option>
+                        </select>
+
+                        <div className="flex gap-2">
+                          <a
+                            href={`tel:${order.phone}`}
+                            className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
+                          >
+                            📞 Позвонить
+                          </a>
+                          <a
+                            href={`https://wa.me/${order.phone.replace(
+                              /\D/g,
+                              "",
+                            )}`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#25D366] px-4 py-2 text-sm text-black hover:opacity-90"
+                          >
+                            💬 WhatsApp
+                          </a>
+                          <button
+                            onClick={() => deleteOrder(order.id)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-red-500/80 px-4 py-2 text-sm text-white hover:bg-red-600"
+                          >
+                            🗑️ Удалить
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4">
-                      <select
-                        value={lead.status}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          setLeads((prev) =>
-                            prev.map((l) =>
-                              l.id === lead.id
-                                ? { ...l, status: newStatus }
-                                : l,
-                            ),
-                          );
-                          await supabase
-                            .from("leads")
-                            .update({ status: newStatus })
-                            .eq("id", lead.id);
-                        }}
-                        className={`cursor-pointer rounded-xl border px-4 py-2 text-sm font-medium ${
-                          lead.status === "new"
-                            ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-400"
-                            : lead.status === "processing"
-                              ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
-                              : lead.status === "confirmed"
-                                ? "border-green-500/50 bg-green-500/10 text-green-400"
-                                : "border-red-500/50 bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        <option value="new">🟡 Новый</option>
-                        <option value="processing">🔵 В обработке</option>
-                        <option value="confirmed">🟢 Подтвержден</option>
-                        <option value="canceled">🔴 Отменен</option>
-                      </select>
+                    {imageUrl && (
+                      <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+                        <img
+                          src={imageUrl}
+                          alt={product?.title || "Товар"}
+                          className="h-[260px] w-full object-cover"
+                        />
+                      </div>
+                    )}
 
-                      <div className="flex gap-2">
-                        <a
-                          href={`tel:${lead.phone}`}
-                          className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
-                        >
-                          📞 Позвонить
-                        </a>
-                        <a
-                          href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`}
-                          target="_blank"
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#25D366] px-4 py-2 text-sm text-black hover:opacity-90"
-                        >
-                          💬 WhatsApp
-                        </a>
-                        <button
-                          onClick={async () => {
-                            if (!confirm("Удалить заявку?")) return;
-                            await supabase
-                              .from("leads")
-                              .delete()
-                              .eq("id", lead.id);
-                            setLeads((prev) =>
-                              prev.filter((l) => l.id !== lead.id),
-                            );
-                          }}
-                          className="inline-flex items-center gap-1 rounded-lg bg-red-500/80 px-4 py-2 text-sm text-white hover:bg-red-600"
-                        >
-                          🗑️ Удалить
-                        </button>
+                    <div className="mt-6 border-t border-white/10 pt-6">
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 items-center">
+                        <div>
+                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                            Товар
+                          </div>
+                          <div className="font-medium text-white">
+                            {product?.title || "—"}
+                          </div>
+                        </div>
+                        {product?.brand && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                              Бренд
+                            </div>
+                            <div className="text-white">{product.brand}</div>
+                          </div>
+                        )}
+                        {product?.country && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                              Страна
+                            </div>
+                            <div className="text-white">{product.country}</div>
+                          </div>
+                        )}
+                        {product?.size && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                              Размер
+                            </div>
+                            <div className="text-white">{product.size}</div>
+                          </div>
+                        )}
+                        {product?.material && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                              Материал
+                            </div>
+                            <div className="text-white">{product.material}</div>
+                          </div>
+                        )}
+                        {product?.price && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
+                              Цена
+                            </div>
+                            <div className="text-lg font-bold text-[#D6A85F]">
+                              {product.price} ₽
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  {lead.products?.image && (
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
-                      <img
-                        src={lead.products.image}
-                        alt={lead.product}
-                        className="h-[260px] w-full object-cover"
+
+                    <div className="mt-6">
+                      <div className="mb-2 text-xs uppercase tracking-wider text-[#B8C2CE]">
+                        Комментарий менеджера
+                      </div>
+                      <textarea
+                        key={`${order.id}-${order.updated}`}
+                        placeholder="✏️ Введите заметку по заявке..."
+                        defaultValue={order.notes || ""}
+                        onBlur={(e) => updateNotes(order.id, e.target.value)}
+                        rows={2}
+                        className="w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none focus:border-violet-500"
                       />
                     </div>
-                  )}
-
-                  {/* Характеристики товара */}
-                  <div className="mt-6 border-t border-white/10 pt-6">
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 items-center">
-                      <div>
-                        <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                          Товар
-                        </div>
-                        <div className="font-medium text-white">
-                          {lead.product}
-                        </div>
-                      </div>
-                      {lead.products?.brand && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                            Бренд
-                          </div>
-                          <div className="text-white">
-                            {lead.products.brand}
-                          </div>
-                        </div>
-                      )}
-                      {lead.products?.country && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                            Страна
-                          </div>
-                          <div className="text-white">
-                            {lead.products.country}
-                          </div>
-                        </div>
-                      )}
-                      {lead.products?.size && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                            Размер
-                          </div>
-                          <div className="text-white">{lead.products.size}</div>
-                        </div>
-                      )}
-                      {lead.products?.material && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                            Материал
-                          </div>
-                          <div className="text-white">
-                            {lead.products.material}
-                          </div>
-                        </div>
-                      )}
-                      {lead.products?.price && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-[#B8C2CE]">
-                            Цена
-                          </div>
-                          <div className="text-lg font-bold text-[#D6A85F]">
-                            {lead.products.price} ₽
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
-
-                  {/* Комментарий менеджера */}
-                  <div className="mt-6">
-                    <div className="mb-2 text-xs uppercase tracking-wider text-[#B8C2CE]">
-                      Комментарий менеджера
-                    </div>
-                    <textarea
-                      placeholder="✏️ Введите заметку по заявке..."
-                      defaultValue={lead.notes || ""}
-                      onBlur={async (e) => {
-                        const value = e.target.value;
-                        await supabase
-                          .from("leads")
-                          .update({ notes: value })
-                          .eq("id", lead.id);
-                      }}
-                      rows={2}
-                      className="w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none focus:border-violet-500"
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Загрузить ещё */}
       {hasMore && (
         <div className="mt-10 flex justify-center">
           <button
-            onClick={() => fetchLeads()}
+            onClick={() => fetchOrders()}
             className="rounded-2xl bg-violet-600 px-8 py-4 font-medium text-white transition hover:bg-violet-700"
           >
             Загрузить еще
@@ -590,7 +562,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {filteredLeads.length === 0 && !loading && (
+      {filteredOrders.length === 0 && !loading && (
         <div className="py-20 text-center">
           <p className="text-[#B8C2CE]">Заявок не найдено</p>
         </div>

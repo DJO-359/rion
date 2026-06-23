@@ -1,80 +1,102 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createPublicPb } from "@/shared/lib/pocketbase-server";
+import { getProductFileUrl } from "@/shared/lib/pocketbase";
 import { sendTelegramMessage } from "@/shared/lib/telegram";
 
-const requestMap = new Map<string, number>();
+const PB_ID_RE = /^[a-z0-9]{15}$/;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
+/** Публичный endpoint — регистрация не требуется */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const name = String(body.name ?? "").trim();
+    const phone = String(body.phone ?? "").trim();
+    const productId = String(body.productId ?? "").trim();
 
-    const { name, phone, product, productId } = body;
-
-    if (!name || !phone || !productId) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!name || name.length > 100) {
+      return NextResponse.json({ error: "Invalid name" }, { status: 400 });
     }
 
-    // RATE LIMIT
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
-
-    const lastRequest = requestMap.get(ip);
-
-    const now = Date.now();
-
-    if (lastRequest && now - lastRequest < 1500) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+      return NextResponse.json({ error: "Invalid phone" }, { status: 400 });
     }
 
-    requestMap.set(ip, now);
+    const pb = createPublicPb();
+    const hasProduct = PB_ID_RE.test(productId);
 
-    // PRODUCT DATA
-    const { data: productData } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", productId)
-      .single();
+    if (hasProduct) {
+      const productData = await pb.collection("products").getOne(productId);
 
-    // INSERT LEAD
-    const { error } = await supabase.from("leads").insert({
+      const order = await pb.collection("orders").create({
+        name,
+        phone,
+        product: productId,
+        status: "new",
+      });
+
+      const image = productData.images?.length
+        ? getProductFileUrl(productData, productData.images[0])
+        : undefined;
+
+      const telegramSent = await sendTelegramMessage({
+        name,
+        phone,
+        product: productData.title,
+        productId,
+        orderId: order.id,
+        image,
+        brand: productData.brand,
+        country: productData.country,
+        size: productData.size,
+        material: productData.material,
+        price: productData.price,
+      });
+
+      if (!telegramSent) {
+        return NextResponse.json(
+          {
+            success: true,
+            orderId: order.id,
+            warning: "Order saved but Telegram notification failed",
+          },
+          { status: 201 },
+        );
+      }
+
+      return NextResponse.json({ success: true, orderId: order.id });
+    }
+
+    // Общая консультация с главной (без товара)
+    const order = await pb.collection("orders").create({
       name,
       phone,
-      product,
-      product_id: productId,
       status: "new",
+      comment: "Общая консультация с сайта",
     });
 
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // TELEGRAM
-    await sendTelegramMessage({
+    const telegramSent = await sendTelegramMessage({
       name,
       phone,
-      product,
-      productId,
-
-      image: productData?.image,
-      brand: productData?.brand,
-      country: productData?.country,
-      size: productData?.size,
-      material: productData?.material,
-      price: productData?.price,
+      product: "Общая консультация",
+      productId: "consultation",
+      orderId: order.id,
     });
 
-    return NextResponse.json({
-      success: true,
-    });
+    if (!telegramSent) {
+      return NextResponse.json(
+        {
+          success: true,
+          orderId: order.id,
+          warning: "Order saved but Telegram notification failed",
+        },
+        { status: 201 },
+      );
+    }
+
+    return NextResponse.json({ success: true, orderId: order.id });
   } catch (error) {
     console.error("SERVER ERROR:", error);
-
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -2,10 +2,13 @@ import { ReactNode } from "react";
 
 interface ContainerProps {
   children: ReactNode;
+  className?: string;
 }
 
-export function Container({ children }: ContainerProps) {
+export function Container({ children, className = "" }: ContainerProps) {
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-6 h-full">{children}</div>
+    <div className={`mx-auto w-full max-w-[1440px] px-0 ${className}`}>
+      {children}
+    </div>
   );
 }
