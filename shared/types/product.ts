@@ -1,23 +1,51 @@
-export interface Product {
+export type Product = {
   id: string;
 
   title: string;
-
-  price: number;
-
+  price: string;
   category: string;
-
-  image: string;
-
-  active: boolean;
 
   description?: string;
 
   brand?: string;
-
   country?: string;
-
   size?: string;
-
   material?: string;
-}
+
+  status?: string;
+  active: boolean;
+
+  images?: string[];
+
+  old_price?: string;
+  discount_percent?: number;
+
+  discount_start?: string;
+  discount_end?: string;
+  discount_unlimited?: boolean;
+
+  created: string;
+  updated: string;
+};
+
+export type Order = {
+  id: string;
+
+  name: string;
+  phone: string;
+
+  product: string;
+
+  status: string;
+
+  comment?: string;
+  manager_name?: string;
+  notes?: string;
+
+  created: string;
+  updated: string;
+
+  expand?: {
+    product?: Product;
+  };
+};

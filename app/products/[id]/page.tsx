@@ -1,90 +1,349 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import Link from "next/link";
 import { useParams } from "next/navigation";
-
-import { supabase } from "@/shared/lib/supabase";
-
+import {
+  ChevronRight,
+  CheckCircle2,
+  Truck,
+  Shield,
+  Phone,
+  ZoomIn,
+} from "lucide-react";
+import pb from "@/shared/lib/pocketbase";
 import { LeadModal } from "@/components/ui/modals/lead-modal";
-
+import { ProductCard } from "@/components/storefront/product-card";
+import { ProductGridSkeleton } from "@/components/storefront/product-card-skeleton";
+import { Container } from "@/components/layout/container";
 import type { Product } from "@/shared/types/product";
+import {
+  formatPrice,
+  getPriceUnit,
+  getProductBadges,
+  getProductImageUrl,
+} from "@/shared/lib/product-utils";
 
 export default function ProductDetailsPage() {
   const params = useParams();
-
   const [product, setProduct] = useState<Product | null>(null);
-
+  const [similar, setSimilar] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [openModal, setOpenModal] = useState(false);
-
-  const fetchProduct = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", params.id)
-      .single();
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setProduct(data);
-
-    setLoading(false);
-  };
+  const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
-    fetchProduct();
-  }, []);
+    const id = params.id as string;
+    setLoading(true);
+    setCurrentImageIndex(0);
+
+    pb.collection("products")
+      .getOne<Product>(id)
+      .then(async (data) => {
+        setProduct(data);
+        const related = await pb.collection("products").getFullList<Product>({
+          filter: `category="${data.category}" && active=true && id != "${id}"`,
+          sort: "-created",
+        });
+        setSimilar(related.slice(0, 3));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [params.id]);
 
   if (loading) {
-    return <div className="p-10 text-white">Загрузка...</div>;
+    return (
+      <Container>
+        <div className="py-10">
+          <ProductGridSkeleton count={1} />
+        </div>
+      </Container>
+    );
   }
 
   if (!product) {
-    return <div className="p-10 text-white">Товар не найден</div>;
+    return (
+      <Container>
+        <div className="py-20 text-center">
+          <h1 className="text-2xl font-bold">Товар не найден</h1>
+          <Link href="/products" className="btn-primary mt-6 inline-flex">
+            В каталог
+          </Link>
+        </div>
+      </Container>
+    );
   }
 
+  const images = product.images ?? [];
+  const mainImage = images.length
+    ? getProductImageUrl(product, currentImageIndex)
+    : "/placeholder.svg";
+  const badges = getProductBadges(product);
+
+  const specs = [
+    { label: "Категория", value: product.category },
+    { label: "Бренд", value: product.brand },
+    { label: "Страна", value: product.country },
+    { label: "Размер", value: product.size },
+    { label: "Материал", value: product.material },
+  ].filter((s) => s.value);
+
   return (
-    <div className="min-h-screen bg-black p-10 text-white">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-2">
-        {/* IMAGE */}
-        <div className="overflow-hidden rounded-3xl border border-zinc-800">
-          <img
-            src={product.image}
-            alt={product.title}
-            className="h-full w-full object-cover"
-          />
+    <>
+      <Container>
+        <nav className="flex flex-wrap items-center gap-2 py-6 text-sm text-[var(--muted)]">
+          <Link href="/" className="hover:text-[#D6A85F]">
+            Главная
+          </Link>
+          <ChevronRight size={14} />
+          <Link href="/products" className="hover:text-[#D6A85F]">
+            Каталог
+          </Link>
+          <ChevronRight size={14} />
+          <span>{product.category}</span>
+          <ChevronRight size={14} />
+          <span className="line-clamp-1 text-white">{product.title}</span>
+        </nav>
+
+        <div className="grid gap-10 pb-24 lg:grid-cols-2 lg:gap-14">
+          {/* Gallery */}
+          <div>
+            <div
+              className={`relative overflow-hidden rounded-2xl border border-white/10 bg-[#141f33] ${
+                zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+              }`}
+              onClick={() => setZoomed(!zoomed)}
+            >
+              <img
+                src={mainImage}
+                alt={product.title}
+                className={`aspect-square w-full object-cover transition-transform duration-300 ${
+                  zoomed ? "scale-150" : "hover:scale-[1.02]"
+                }`}
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-4 rounded-full bg-black/50 p-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomed(!zoomed);
+                }}
+              >
+                <ZoomIn size={18} />
+              </button>
+              {images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((p) =>
+                        p === 0 ? images.length - 1 : p - 1,
+                      );
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 px-3 py-2"
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((p) => (p + 1) % images.length);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 px-3 py-2"
+                  >
+                    ▶
+                  </button>
+                </>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 ${
+                      idx === currentImageIndex
+                        ? "border-[#C89B5E]"
+                        : "border-transparent opacity-70"
+                    }`}
+                  >
+                    <img
+                      src={getProductImageUrl(product, idx)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div>
+            <div className="flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <span
+                  key={b.label}
+                  className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400"
+                >
+                  {b.label}
+                </span>
+              ))}
+            </div>
+
+            {product.brand && (
+              <p className="mt-4 text-sm uppercase tracking-widest text-[var(--muted)]">
+                {product.brand}
+              </p>
+            )}
+
+            <h1 className="mt-2 text-3xl font-bold leading-tight md:text-4xl">
+              {product.title}
+            </h1>
+
+            <div className="mt-6 flex items-baseline gap-3">
+              <span className="text-4xl font-bold text-[#D6A85F]">
+                {formatPrice(product.price)}
+              </span>
+              <span className="text-lg text-[var(--muted)]">
+                {getPriceUnit(product.category)}
+              </span>
+            </div>
+
+            <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              {[
+                { icon: CheckCircle2, text: "В наличии на складе" },
+                { icon: Truck, text: "Доставка по СКФО от 1 дня" },
+                { icon: Shield, text: "Гарантия производителя" },
+              ].map((item) => (
+                <div
+                  key={item.text}
+                  className="flex items-center gap-3 text-sm text-[var(--muted)]"
+                >
+                  <item.icon size={18} className="shrink-0 text-emerald-400" />
+                  {item.text}
+                </div>
+              ))}
+            </div>
+
+            {product.description && (
+              <p className="mt-6 leading-relaxed text-[var(--muted)]">
+                {product.description}
+              </p>
+            )}
+
+            <div className="mt-8 hidden gap-3 lg:flex">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalProduct(product);
+                  setOpenModal(true);
+                }}
+                className="btn-primary flex-1 py-4 text-base"
+              >
+                Узнать наличие и цену
+              </button>
+              <a href="tel:+79637048177" className="btn-secondary px-6">
+                <Phone size={18} />
+              </a>
+              <a
+                href={`https://wa.me/79637048177?text=${encodeURIComponent(`Здравствуйте! Интересует: ${product.title}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-secondary px-6"
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
         </div>
 
-        {/* INFO */}
-        <div>
-          <h1 className="text-5xl font-bold">{product.title}</h1>
+        {specs.length > 0 && (
+          <section className="mb-16">
+            <h2 className="mb-6 text-2xl font-bold">Характеристики</h2>
+            <div className="card-storefront overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {specs.map((spec, i) => (
+                    <tr
+                      key={spec.label}
+                      className={i % 2 === 0 ? "bg-white/[0.02]" : ""}
+                    >
+                      <td className="px-6 py-4 text-[var(--muted)]">
+                        {spec.label}
+                      </td>
+                      <td className="px-6 py-4 font-medium">{spec.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
-          <p className="mt-5 text-3xl text-violet-400">{product.price} ₽</p>
+        {similar.length > 0 && (
+          <section className="mb-16">
+            <h2 className="mb-6 text-2xl font-bold">Похожие товары</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {similar.map((p, i) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  index={i}
+                  onLeadClick={(p) => {
+                    setModalProduct(p);
+                    setOpenModal(true);
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </Container>
 
-          <p className="mt-3 text-zinc-500">Категория: {product.category}</p>
-
+      {/* Sticky mobile CTA */}
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#07111f]/95 p-4 backdrop-blur-lg lg:hidden">
+        <div className="flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs text-[var(--muted)]">
+              {product.title}
+            </div>
+            <div className="text-xl font-bold text-[#D6A85F]">
+              {formatPrice(product.price)} {getPriceUnit(product.category)}
+            </div>
+          </div>
           <button
-            onClick={() => setOpenModal(true)}
-            className="mt-10 rounded-2xl bg-violet-600 px-8 py-5 text-xl font-medium transition hover:bg-violet-700"
+            type="button"
+            onClick={() => {
+              setModalProduct(product);
+              setOpenModal(true);
+            }}
+            className="btn-primary shrink-0 px-6 py-3"
           >
-            Узнать наличие
+            Заявка
           </button>
         </div>
       </div>
 
-      {/* MODAL */}
-      {openModal && (
+      {openModal && modalProduct && (
         <LeadModal
-          productTitle={product.title}
-          productId={product.id}
-          onClose={() => setOpenModal(false)}
+          productTitle={modalProduct.title}
+          productId={modalProduct.id}
+          productPrice={modalProduct.price}
+          productCategory={modalProduct.category}
+          productRecord={modalProduct}
+          onClose={() => {
+            setOpenModal(false);
+            setModalProduct(null);
+          }}
         />
       )}
-    </div>
+    </>
   );
 }
