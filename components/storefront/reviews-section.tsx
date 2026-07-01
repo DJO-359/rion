@@ -68,7 +68,7 @@ export function ReviewsSection() {
 
         <div className="mb-10 text-center">
 
-          <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
+          <h2 className="reviews-heading text-2xl font-bold text-slate-900 md:text-3xl">
 
             Что говорят клиенты
 

@@ -35,7 +35,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
                 : "/placeholder.svg"
             }
             alt={product.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 "
           />
 
           {hasDiscount && (
@@ -46,9 +46,9 @@ export function ProductCard({ product, index }: ProductCardProps) {
         </div>
       </Link>
 
-      <div className="mt-3">
+      <div className="mt-3 pad_card">
         <Link href={`/products/${product.id}`} className="block">
-          <h3 className="line-clamp-2 min-h-[40px] text-sm font-medium leading-5 text-slate-800 transition-colors hover:text-violet-600">
+          <h3 className="line-clamp-2 min-h-[20px] text-sm font-medium leading-5  text-slate-800 transition-colors hover:text-violet-600">
             {product.title}
           </h3>
 
@@ -70,9 +70,6 @@ export function ProductCard({ product, index }: ProductCardProps) {
             <>
               <span className="text-sm font-medium text-slate-400 line-through">
                 {formatPrice(oldPrice)} ₽
-              </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-red-600">
-                -{discountPercent}%
               </span>
             </>
           )}

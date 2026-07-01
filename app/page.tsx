@@ -10,7 +10,7 @@ import Products from "@/sections/home/products";
 
 import { ShowroomMap } from "@/sections/home/showroom-map";
 
-import { TrustSection } from "@/components/storefront/trust-section";
+// import { TrustSection } from "@/components/storefront/trust-section";
 
 import { ReviewsSection } from "@/components/storefront/reviews-section";
 import DiscountProducts from "@/components/storefront/discount-products";
@@ -28,7 +28,7 @@ export default function HomePage() {
 
       <Products />
 
-      <TrustSection />
+      {/* <TrustSection /> */}
 
       <ReviewsSection />
 

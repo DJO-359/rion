@@ -28,7 +28,7 @@ export default function Products() {
     <section className="bg-[#f8fafc] py-14 md:py-16">
       <Container>
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
+          <h2 className="popular-heading text-2xl font-bold text-slate-900 md:text-3xl">
             Популярные товары
           </h2>
 

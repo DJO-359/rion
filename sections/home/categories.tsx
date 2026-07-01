@@ -25,7 +25,7 @@ export function Categories() {
                 <img
                   src={cat.image}
                   alt={cat.title}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
+                  className="h-full w-full object-fill transition duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
                 />
                 <div
                   style={{
@@ -40,9 +40,9 @@ export function Categories() {
                   <div
                     style={{
                       fontSize: "18px",
-                      fontWeight: "600",
+                      // fontWeight: "600",
 
-                      textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
+                      // textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
                     }}
                   >
                     {cat.title}
