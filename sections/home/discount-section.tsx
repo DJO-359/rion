@@ -78,7 +78,7 @@ export function DiscountSection() {
   return (
     <section className="py-10 md:py-14 ">
       <Container>
-        <div className="flex flex-col gap-5 lg:flex-row lg:gap-6 rounded-[32px] bg-slate-950 p-4 shadow-[var(--shadow-soft)]">
+        <div className="flex flex-col gap-5 rounded-[32px] bg-[#181d29] p-4 shadow-[var(--shadow-soft)] lg:flex-row lg:gap-6">
           <Link
             href="/products"
             className="group relative flex h-[320px] w-[320px] shrink-0 overflow-hidden rounded-l-[24px] bg-[#0f1726] shadow-[var(--shadow-soft)]"
@@ -95,7 +95,7 @@ export function DiscountSection() {
             />
           </Link>
 
-          <div className="relative min-w-0 flex-1 rounded-r-[24px] border border-white/10 bg-slate-900 discount-scroll-wrapper shadow-[var(--shadow-soft)] px-3 sm:px-4  overflow-hidden h-[320px]">
+          <div className="relative min-w-0 flex-1 rounded-r-[24px] bg-slate-900 discount-scroll-wrapper shadow-[var(--shadow-soft)] px-3 sm:px-4 overflow-hidden h-[320px]">
             <div
               ref={scrollRef}
               onScroll={updateScrollButtons}

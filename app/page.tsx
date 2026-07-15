@@ -13,7 +13,7 @@ import { ShowroomMap } from "@/sections/home/showroom-map";
 // import { TrustSection } from "@/components/storefront/trust-section";
 
 import { ReviewsSection } from "@/components/storefront/reviews-section";
-import DiscountProducts from "@/components/storefront/discount-products";
+// import DiscountProducts from "@/components/storefront/discount-products";
 
 export default function HomePage() {
   return (
@@ -33,7 +33,7 @@ export default function HomePage() {
       <ReviewsSection />
 
       <ShowroomMap />
-      <DiscountProducts />
+      {/* <DiscountProducts /> */}
     </>
   );
 }

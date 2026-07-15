@@ -64,6 +64,28 @@ body {
   margin-bottom: 70px;
 }
 
+.showroom-map-section {
+  /* margin-top: 3rem;
+  margin-bottom: 3rem; */
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.showroom-map-card {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.product-more-button {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.9rem;
+}
+
 .categories-grid {
   margin-bottom: 70px;
 }
@@ -427,6 +449,20 @@ a {
   }
 }
 
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+body.cart-bar-visible main {
+  padding-bottom: 5rem;
+}
+
+
 .premium-btn {
   position: relative;
   overflow: hidden;
@@ -469,4 +505,72 @@ a {
 .reviews-heading {
   margin-top: 28px;
   margin-bottom: 28px;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+
+  70% {
+    opacity: 0.15;
+  }
+
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.feedback-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(59, 130, 246, 0.45);
+  animation: ripple 3s linear infinite;
+}
+
+.feedback-ripple:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.feedback-ripple:nth-child(3) {
+  animation-delay: 2s;
+}
+
+/* Showroom route button (centralized CSS) */
+.showroom-route-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #0c2d6b;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .showroom-route-btn {
+    width: 16rem; /* matches sm:w-64 */
+  }
+}
+
+.showroom-route-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.shourum_pad {
+  padding: 32px;
 }

@@ -10,12 +10,15 @@ import {
   Shield,
   Phone,
   ZoomIn,
+  ShoppingCart,
 } from "lucide-react";
 import pb from "@/shared/lib/pocketbase";
 import { LeadModal } from "@/components/ui/modals/lead-modal";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductGridSkeleton } from "@/components/storefront/product-card-skeleton";
 import { Container } from "@/components/layout/container";
+import { useCart } from "@/components/storefront/cart-context";
+import { toast } from "sonner";
 import type { Product } from "@/shared/types/product";
 import {
   formatPrice,
@@ -26,6 +29,7 @@ import {
 
 export default function ProductDetailsPage() {
   const params = useParams();
+  const { addToCart, getItemsCount } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [similar, setSimilar] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +93,13 @@ export default function ProductDetailsPage() {
     { label: "Размер", value: product.size },
     { label: "Материал", value: product.material },
   ].filter((s) => s.value);
+
+  const hasCartItems = getItemsCount() > 0;
+
+  const handleAddToCart = () => {
+    addToCart(product);
+    toast.success("Товар добавлен в корзину");
+  };
 
   return (
     <>
@@ -241,15 +252,22 @@ export default function ProductDetailsPage() {
             <div className="mt-8 hidden gap-3 lg:flex">
               <button
                 type="button"
+                onClick={handleAddToCart}
+                className="btn-primary flex flex-1 items-center justify-center gap-2 py-4 text-base"
+              >
+                <ShoppingCart size={18} />В корзину
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   setModalProduct(product);
                   setOpenModal(true);
                 }}
-                className="btn-primary flex-1 py-4 text-base"
+                className="btn-secondary flex-1 py-4 text-base bg-red-500"
               >
                 Узнать наличие и цену
               </button>
-              <a href="tel:+79637048177" className="btn-secondary px-6">
+              <a href="tel:+79637048177" className="btn-secondary px-6 ">
                 <Phone size={18} />
               </a>
               <a
@@ -308,8 +326,12 @@ export default function ProductDetailsPage() {
       </Container>
 
       {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#07111f]/95 p-4 backdrop-blur-lg lg:hidden">
-        <div className="flex items-center gap-4">
+      <div
+        className={`fixed inset-x-0 z-40 border-t border-white/10 bg-[#07111f]/95 p-4 backdrop-blur-lg lg:hidden ${
+          hasCartItems ? "bottom-16" : "bottom-0"
+        }`}
+      >
+        <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs text-[var(--muted)]">
               {product.title}
@@ -320,11 +342,18 @@ export default function ProductDetailsPage() {
           </div>
           <button
             type="button"
+            onClick={handleAddToCart}
+            className="btn-primary flex shrink-0 items-center gap-1.5 px-4 py-3"
+          >
+            <ShoppingCart size={16} />В корзину
+          </button>
+          <button
+            type="button"
             onClick={() => {
               setModalProduct(product);
               setOpenModal(true);
             }}
-            className="btn-primary shrink-0 px-6 py-3"
+            className="btn-secondary shrink-0 px-4 py-3 text-sm"
           >
             Заявка
           </button>

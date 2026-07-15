@@ -156,6 +156,98 @@ export async function sendTelegramMessage(data: {
   }
 }
 
+const CONTACT_METHOD_LABELS: Record<string, string> = {
+  whatsapp: "WhatsApp",
+  telegram: "Telegram",
+  phone: "Звонок",
+};
+
+export async function sendTelegramCartMessage(data: {
+  orderId: string;
+  contactMethod: string;
+  items: Array<{ title: string; quantity: number; price: string }>;
+  totalPrice: number;
+}): Promise<boolean> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!token || !chatId) {
+    console.error("Telegram env missing");
+    return false;
+  }
+
+  const itemsList = data.items
+    .map(
+      (item, idx) =>
+        `${idx + 1}. ${escapeTelegram(item.title)} — ${item.quantity} шт. × ${escapeTelegram(item.price)} ₽`,
+    )
+    .join("\n");
+
+  const contactLabel =
+    CONTACT_METHOD_LABELS[data.contactMethod] ?? data.contactMethod;
+
+  const text = `
+🛒 ЗАЯВКА ИЗ КОРЗИНЫ
+
+📱 Способ связи: ${escapeTelegram(contactLabel)}
+
+📦 Товары:
+${itemsList}
+
+💰 Итого: ${escapeTelegram(String(data.totalPrice))} ₽
+
+🧾 Заказ: ${data.orderId}
+`;
+
+  const fetchWithTimeout = async (
+    url: string,
+    options: RequestInit,
+    timeout = 20000,
+  ) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  };
+
+  const keyboard = [
+    [
+      { text: "✅ Подтвердить", callback_data: `confirm_${data.orderId}` },
+      { text: "❌ Отменить", callback_data: `cancel_${data.orderId}` },
+    ],
+  ];
+
+  try {
+    const textResponse = await fetchWithTimeout(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          reply_markup: { inline_keyboard: keyboard },
+        }),
+      },
+    );
+    const textResult = await textResponse.json();
+    return Boolean(textResult.ok);
+  } catch (error) {
+    console.error("TELEGRAM CART ERROR:", error);
+    return false;
+  }
+}
+
 export async function answerCallbackQuery(
   callbackQueryId: string,
   text?: string,

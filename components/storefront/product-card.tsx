@@ -77,7 +77,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
 
         <Link
           href={`/products/${product.id}`}
-          className="mt-3 block w-full rounded-xl border border-slate-200 bg-white py-2 text-center text-sm font-medium text-slate-700 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600"
+          className="product-more-button  block w-4/5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-center text-sm font-medium text-slate-700 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600"
         >
           Подробнее
         </Link>

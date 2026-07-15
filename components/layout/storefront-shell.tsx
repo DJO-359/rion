@@ -14,6 +14,10 @@ import { ConsultationModal } from "@/components/storefront/consultation-modal";
 
 import { FeedbackButton } from "@/components/storefront/feedback-button";
 
+import { CartProvider } from "@/components/storefront/cart-context";
+
+import { CartUI } from "@/components/storefront/cart-ui";
+
 
 
 export function StorefrontShell({ children }: { children: React.ReactNode }) {
@@ -34,15 +38,21 @@ export function StorefrontShell({ children }: { children: React.ReactNode }) {
 
     <ConsultationProvider>
 
-      <Header />
+      <CartProvider>
 
-      <main className="mx-auto min-h-screen w-full flex-1">{children}</main>
+        <Header />
 
-      <Footer />
+        <main className="mx-auto min-h-screen w-full flex-1">{children}</main>
 
-      <FeedbackButton />
+        <Footer />
 
-      <ConsultationModal />
+        <FeedbackButton />
+
+        <ConsultationModal />
+
+        <CartUI />
+
+      </CartProvider>
 
     </ConsultationProvider>
 
